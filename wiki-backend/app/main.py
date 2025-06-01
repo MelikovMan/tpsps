@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
+from app.core.cache import init_redis_cache
 from app.api.v1.router import api_router
 import os
 app = FastAPI(

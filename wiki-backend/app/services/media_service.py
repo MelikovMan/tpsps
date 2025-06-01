@@ -32,10 +32,10 @@ class MediaService:
         file_content = await file.read()
         file_size = len(file_content)
         
-        if file_size > settings.MAX_FILE_SIZE:
+        if file_size > settings.max_file_size:
             raise HTTPException(
                 status_code=413, 
-                detail=f"File too large. Maximum size: {settings.MAX_FILE_SIZE} bytes"
+                detail=f"File too large. Maximum size: {settings.max_file_size} bytes"
             )
         
         # Определяем MIME тип

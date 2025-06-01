@@ -70,7 +70,14 @@ class Branch(Base):
     name = Column(String(50), nullable=False)
     description = Column(String(100),default="New branch")
     head_commit_id = Column(UUID(as_uuid=True), ForeignKey("commits.id"), nullable=False)
+    #is_protected = Column(Boolean, default=False)  # Защищенная ветка
+    #is_private = Column(Boolean, default=False)    # Приватная ветка
+    #created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    #created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
     article = relationship("Article", back_populates="branches")
     head_commit = relationship("Commit", back_populates="branches")
+    #creator = relationship("User", back_populates="created_branches")
+    tags = relationship("BranchTag", back_populates="branch")
+    user_access = relationship("BranchAccess", back_populates="branch")

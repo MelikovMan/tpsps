@@ -18,7 +18,7 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     password: Optional[str] = None
 
-class UserResponse(UserBase):
+class  UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
     access_token: str
     id:UUID

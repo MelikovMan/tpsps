@@ -20,7 +20,6 @@ export default function LoadingSpinner({
         display: 'inline-block'
       }}
     >
-      {/* Здесь может быть ваша реализация спиннера */}
       <Loader color="blue" />;
     </div>
   );
