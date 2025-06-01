@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - wiki-network
+
+  backend:
+    build: ./wiki-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://wiki_user:wiki_password@postgres:5432/wiki_db
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - wiki-network
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: wiki_db
+      POSTGRES_USER: wiki_user
+      POSTGRES_PASSWORD: wiki_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./wiki-backend/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-extensions.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiki_user -d wiki_db"]
+    networks:
+      - wiki-network
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+    networks:
+      - wiki-network
+
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"  # API порт
+      - "9001:9001"  # Console порт
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      # Настройки для автоматического создания bucket
+      MINIO_DEFAULT_BUCKETS: "media-files"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/media-files --ignore-existing;
+      /usr/bin/mc policy set public myminio/media-files;
+      echo 'MinIO setup completed';
+      "
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  wiki-network:
+    driver: bridge

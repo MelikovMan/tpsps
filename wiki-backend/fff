@@ -1,0 +1,8 @@
+New-Item app/__init__.py
+New-Item app/api/__init__.py
+New-Item app/api/v1/__init__.py
+New-Item app/core/__init__.py
+New-Item app/models/__init__.py
+New-Item app/schemas/__init__.py
+New-Item app/services/__init__.py
+New-Item app/utils/__init__.py

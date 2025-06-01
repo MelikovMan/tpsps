@@ -1,0 +1,35 @@
+gitignore
+gitignore# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Uploads
+uploads/
+static/uploads/
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
