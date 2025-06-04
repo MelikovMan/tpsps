@@ -40,7 +40,7 @@ wiki-backend/.vscode/
 wiki-backend/.idea/
 
 # Environment variables
-wiki-backend/.env
+#wiki-backend/.env
 
 # Database
 wiki-backend/*.db
