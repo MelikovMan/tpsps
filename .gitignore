@@ -1,0 +1,59 @@
+# Logs
+frontend/logs
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+frontend/*.local
+
+# Editor directories and files
+frontend/.vscode/*
+frontend/!.vscode/extensions.json
+frontend/.idea
+frontend/.DS_Store
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+frontend/*.sw?
+
+
+wiki-backend/__pycache__/
+wiki-backend/*.py[cod]
+wiki-backend/*$py.class
+wiki-backend/*.so
+.Python
+wiki-backend/env/
+wiki-backend/venv/
+wiki-backend/ENV/
+wiki-backend/env.bak/
+wiki-backend/venv.bak/
+
+# IDE
+wiki-backend/.vscode/
+wiki-backend/.idea/
+
+# Environment variables
+wiki-backend/.env
+
+# Database
+wiki-backend/*.db
+wiki-backend/*.sqlite3
+
+# Logs
+wiki-backend/*.log
+
+# Uploads
+wiki-backend/uploads/
+wiki-backend/static/uploads/
+
+# Tests
+wiki-backend/.pytest_cache/
+wiki-backend/.coverage
+wiki-backend/htmlcov/
