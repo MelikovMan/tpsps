@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
 async_engine = create_async_engine(
-    settings.database_url,  # Должен быть в формате: postgresql+asyncpg://user:pass@host/db
+    settings.database_url,
+    pool_pre_ping=True,  # Должен быть в формате: postgresql+asyncpg://user:pass@host/db
     echo=settings.debug,
     future=True,
     

@@ -8,11 +8,13 @@ from .comment import Comment
 from .media import Media
 from .template import Template
 from .permission import Permission
+from .branch_tag import BranchTag,BranchAccess,BranchTagPermission
 
 __all__ = [
     "User", "UserProfile", "ProfileVersion",
     "Article", "Commit", "CommitParent", "Branch",
     "Category", "ArticleCategory",
     "Tag", "TagPermission",
-    "Moderation", "Comment", "Media", "Template", "Permission"
+    "Moderation", "Comment", "Media", "Template", "Permission",
+    "BranchTag","BranchAccess","BranchTagPermission"
 ]

@@ -1,11 +1,14 @@
-import { AppShell, Group, NavLink, Text, Anchor, Box } from '@mantine/core';
-import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
-import { IconHome, IconArticle, IconCategory, IconUser, IconShield, IconSettings, type IconProps, type Icon } from '@tabler/icons-react';
+import { AppShell, Group, NavLink, Text, Anchor, Box, Burger } from '@mantine/core';
+import { Outlet, useLocation, Link } from 'react-router-dom';
+import { IconHome, IconArticle, IconCategory, IconUser, IconShield, IconSettings } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo.tsx';
 import UserMenu from '../components/UserMenu.tsx';
-import { useEffect } from 'react';
 import type { PermissionKey } from '../Routes/RoleBasedRoute';
+import { useDisclosure } from '@mantine/hooks';
+import PageTransition from '../components/PageTransition.tsx';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ColorSchemeToggle } from '../ColorSchemeToggle/ColorSchemeToggle.tsx';
 export interface NavLinks {
   path: string;
   label: string;
@@ -14,8 +17,8 @@ export interface NavLinks {
 }
 export default function MainPage() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { isAuthenticated, user, permissions } = useAuth();
+  const [opened, { toggle }] = useDisclosure();
 
   // Навигационные ссылки
   const navLinks: NavLinks[] = [
@@ -33,27 +36,30 @@ export default function MainPage() {
            (path !== '/' && location.pathname.startsWith(path));
   };
 
-  // Редирект на главную при отсутствии аутентификации
-  useEffect(() => {
-    if (!isAuthenticated && location.pathname !== '/') {
-      navigate('/');
-    }
-  }, [isAuthenticated, location, navigate]);
-
   return (
     <AppShell
       padding="md"
+      header={{ height: 60 }}
+      navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: !opened } }}
     >
-    <AppShell.Header p="md">
+    <AppShell.Header p="sm">
+          
           <Group justify="space-between">
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Toggle navigation"/>
             <Group>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <Logo size={40} />
-              <Text size="xl" fw={700} ml="sm">
+            </motion.div>
+              <Text size="xl" fw={700} ml="sm" ta="center">
                 Вики-Система
               </Text>
             </Group>
             
             <Group>
+              <ColorSchemeToggle/>
               {isAuthenticated ? (
                 <UserMenu user={user!} />
               ) : (
@@ -72,8 +78,9 @@ export default function MainPage() {
             <AppShell.Navbar p="xs">
           <AppShell.Section grow mt="md">
             {navLinks.map((link) => {
+
               if (link.required){
-                if (link.required.every(perm =>  permissions?.[perm]))
+                if (!permissions || !link.required.every(perm =>  permissions?.[perm]))
                     return null;
               }
                 
@@ -91,7 +98,6 @@ export default function MainPage() {
               );
             })}
           </AppShell.Section>
-          
           <AppShell.Section>
             {isAuthenticated && (
               <NavLink
@@ -104,9 +110,15 @@ export default function MainPage() {
             )}
           </AppShell.Section>
         </AppShell.Navbar>
+      <AppShell.Main>
       <Box p="md">
-        <Outlet />
+        <AnimatePresence mode="wait" >
+        <PageTransition key={location.pathname}>
+          <Outlet />
+        </PageTransition>
+        </AnimatePresence>
       </Box>
+      </AppShell.Main>
     </AppShell>
   );
 }

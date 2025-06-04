@@ -1,6 +1,4 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+
 import './App.css'
 
 // Import styles of packages that you've installed.
@@ -10,15 +8,18 @@ import '@mantine/carousel/styles.css';
 import '@mantine/tiptap/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/dropzone/styles.css';
-
+export const mantineHtmlProps = {
+  suppressHydrationWarning: true,
+  'data-mantine-color-scheme': 'light',
+};
 import {
+  BrowserRouter,
   Links,
   Meta,
-  Outlet,
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -40,12 +41,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 import Router from './Routes';
 import { AuthProvider } from './context/AuthContext';
+import { MantineEmotionProvider } from '@mantine/emotion';
+import { theme } from './theme';
 
 function App() {
 
   return (
     <AuthProvider>
-      <Router/>
+      <MantineProvider
+      theme={theme}
+      withCssVariables
+      >
+        <MantineEmotionProvider>
+          <BrowserRouter>
+            <Router/>
+          </BrowserRouter>
+        </MantineEmotionProvider>
+      </MantineProvider>
     </AuthProvider>
   )
 }

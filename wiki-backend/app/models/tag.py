@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, ForeignKey
+from sqlalchemy import Column, ForeignKeyConstraint, String, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -10,17 +10,25 @@ class Tag(Base):
     article_id = Column(UUID(as_uuid=True), ForeignKey("articles.id"), primary_key=True)
     tag = Column(String(50), primary_key=True, index=True)
     
-    # Relationships  
+    # Упрощенные отношения
     article = relationship("Article", back_populates="tags")
     permissions = relationship("TagPermission", back_populates="tag_obj")
 
 class TagPermission(Base):
     __tablename__ = "tag_permissions"
     
-    tag = Column(String(50), ForeignKey("tags.tag"), primary_key=True)
+    article_id = Column(UUID(as_uuid=True), primary_key=True)
+    tag = Column(String(50), primary_key=True)
     role = Column(String(20), ForeignKey("permissions.role"), primary_key=True)
     can_edit = Column(Boolean, default=False)
     
-    # Relationships
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['article_id', 'tag'], 
+            ['tags.article_id', 'tags.tag']
+        ),
+    )
+    
+    # Упрощенные отношения
     tag_obj = relationship("Tag", back_populates="permissions")
-    permission = relationship("Permission", back_populates="tag_permissions")
+    permission = relationship("Permission")

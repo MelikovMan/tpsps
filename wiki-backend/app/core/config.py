@@ -22,17 +22,17 @@ class Settings(BaseSettings):
     debug: bool = Field(True, alias="DEBUG")
     
     # CORS
-    cors_origins: List[str] = Field(
-        ["http://localhost:3000"],
-        alias="CORS_ORIGINS",
-        json_schema_extra={"format": "json"}  # Указываем, что это JSON-строка
-    )
+#cors_origins: List[str] = Field(
+ #       ["http://localhost:3000"],
+  #      alias="CORS_ORIGINS",
+   #     json_schema_extra={"format": "json"}  # Указываем, что это JSON-строка
+   # )
 
-    @field_validator("cors_origins", mode="before")
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
-            return v.split(",")
-        return v
+    #@field_validator("cors_origins", mode="before")
+    #def parse_cors_origins(cls, v):
+    #    if isinstance(v, str):
+    #        return v.split(",")
+    #    return v
     
     # File Storage
     upload_folder: str = Field("./uploads", alias="UPLOAD_FOLDER")

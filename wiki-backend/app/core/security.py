@@ -1,6 +1,7 @@
 # app/core/security.py
 from datetime import datetime, timedelta
 from typing import Optional
+import bcrypt
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
@@ -17,10 +18,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -51,7 +52,7 @@ async def get_current_user(
         raise credentials_exception
     
     result = await db.execute(select(User).where(User.username == username))
-    user = result.one_or_none()
+    user = result.scalar_one_or_none()
     if user is None:
         raise credentials_exception
     return user
@@ -67,7 +68,7 @@ def require_permission(permission: str):
         result = await db.execute(
             select(Permission).where(Permission.role == current_user.role)
         )
-        user_permission = result.one_or_none()
+        user_permission = result.scalar_one_or_none()
         
         if not user_permission:
             raise HTTPException(
@@ -94,3 +95,31 @@ def require_permission(permission: str):
         return current_user
     
     return permission_checker
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: AsyncSession = Depends(get_db)
+) -> Optional[User]:
+    """Get current user if token is provided, otherwise return None"""
+    if not credentials:
+        return None
+    
+    try:
+        return await get_current_user_from_token(credentials.credentials, db)
+    except:
+        return None
+
+async def get_current_user_from_token(token: str, db: AsyncSession) -> Optional[User]:
+    """Extract user from JWT token"""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+    except Exception:
+        return None
+    
+    query = select(User).where(User.id == user_id)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+    return user
+

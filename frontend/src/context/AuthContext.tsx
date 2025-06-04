@@ -30,7 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { 
     data: permissions, 
     isLoading: permLoading, 
-    isError: permError 
   } = useUserPermissions();
   
   const { mutate: logoutMutation } = useLogout();

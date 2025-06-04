@@ -8,7 +8,6 @@ interface LoadingSpinnerProps {
 
 export default function LoadingSpinner({ 
   fullScreen = false, 
-  size = 'md',
   color = 'blue'
 }: LoadingSpinnerProps) {
   const theme = useMantineTheme();

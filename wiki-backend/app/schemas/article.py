@@ -72,29 +72,44 @@ class CommitResponseDetailed(CommitResponse):
     branch_name: Optional[str] = None
 
 
-class BranchBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=50)
-    description: str = ""
-
-
-class BranchCreate(BranchBase):
+class BranchCreate(BaseModel):
     article_id: UUID
+    name: str = Field(..., min_length=1, max_length=50)
+    description: Optional[str] = Field(default="New branch", max_length=100)
     head_commit_id: UUID
-
+    is_protected: Optional[bool] = False
+    is_private: Optional[bool] = False
 
 class BranchCreateFromCommit(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
-    description: str = ""
-    source_commit_id: UUID  # Коммит от которого создается ветка
+    description: Optional[str] = Field(default="New branch", max_length=100)
+    source_commit_id: UUID
+    is_protected: Optional[bool] = False
+    is_private: Optional[bool] = False
 
+class BranchUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=50)
+    description: Optional[str] = Field(None, max_length=100)
+    is_protected: Optional[bool] = None
+    is_private: Optional[bool] = None
 
-class BranchResponse(BranchBase):
-    model_config = ConfigDict(from_attributes=True)
-    
+class BranchResponse(BaseModel):
     id: UUID
     article_id: UUID
+    name: str
+    description: str
     head_commit_id: UUID
+    is_protected: bool
+    is_private: bool
+    created_by: UUID
     created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class BranchWithCommitCount(BranchResponse):
+    commits_count: int
 
 
 class DiffResponse(BaseModel):

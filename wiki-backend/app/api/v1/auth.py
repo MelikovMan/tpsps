@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.security import verify_password, create_access_token, get_password_hash
 from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest
-from app.schemas.user import UserResponse
+from app.schemas.user import RegisterResponse, UserResponse
 from app.core.config import settings
 
 
@@ -20,7 +20,7 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).where(User.username == request.username))
-    user = result.fetchone()
+    user = result.scalar_one_or_none()
     
 
     if not user or not verify_password(request.password, user.password_hash):
@@ -40,7 +40,7 @@ async def login(
         username=user.username
     )
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=RegisterResponse)
 async def register(
     request: RegisterRequest,
     db: AsyncSession = Depends(get_db)
@@ -76,7 +76,7 @@ async def register(
     )
     await db.commit()
     await db.refresh(new_user)
-    new_user_response = UserResponse(
+    new_user_response = RegisterResponse(
         id=new_id, 
         username=request.username,
         email=request.email,

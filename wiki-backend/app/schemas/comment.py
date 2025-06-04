@@ -22,6 +22,6 @@ class CommentResponse(CommentBase):
     user_id: UUID
     created_at: datetime
     reply_to_id: Optional[UUID] = None
-    replies: Optional[List["CommentResponse"]] = None
+    replies: List["CommentResponse"] = []
 
 CommentResponse.model_rebuild()

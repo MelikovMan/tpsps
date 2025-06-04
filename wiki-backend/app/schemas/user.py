@@ -20,10 +20,13 @@ class UserUpdate(BaseModel):
 
 class  UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
-    access_token: str
+    #access_token: str
     id:UUID
     #created_at: datetime
     #last_login: Optional[datetime] = None
+
+class  RegisterResponse(UserResponse):
+    access_token: str
 
 class UserProfileBase(BaseModel):
     bio: Optional[str] = None

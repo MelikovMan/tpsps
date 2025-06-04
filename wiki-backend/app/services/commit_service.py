@@ -48,22 +48,19 @@ class CommitService:
         ).where(Commit.id == branch.head_commit_id).cte(name="commit_hierarchy", recursive=True)
         
         cte_recursive = cte_initial.union_all(
-            select(
-                Commit.id,
-                Commit.article_id,
-                Commit.author_id,
-                Commit.message,
-                Commit.content_diff,
-                Commit.created_at,
-                Commit.is_merge
-            ).select_from(
-                Commit.join(
-                    CommitParent, Commit.id == CommitParent.parent_id
-                ).join(
-                    cte_initial, CommitParent.commit_id == cte_initial.c.id
-                )
-            )
+        select(
+            Commit.id,
+            Commit.article_id,
+            Commit.author_id,
+            Commit.message,
+            Commit.content_diff,
+            Commit.created_at,
+            Commit.is_merge
+        ).select_from(
+            cte_initial.join(CommitParent, cte_initial.c.id == CommitParent.commit_id)
+                       .join(Commit, CommitParent.parent_id == Commit.id)
         )
+    )
         
         final_query = select(Commit).select_from(
             cte_recursive.join(Commit, Commit.id == cte_recursive.c.id)

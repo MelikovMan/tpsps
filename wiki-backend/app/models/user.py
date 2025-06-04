@@ -17,17 +17,16 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login = Column(DateTime(timezone=True))
     
-    # Relationships
+    # Упрощенные отношения
     profile = relationship("UserProfile", back_populates="user", uselist=False)
     profile_versions = relationship("ProfileVersion", back_populates="user")
     commits = relationship("Commit", back_populates="author")
     comments = relationship("Comment", back_populates="user")
     moderations = relationship("Moderation", back_populates="moderator")
-    permission = relationship("Permission", back_populates="users")
-    branch_tags = relationship("BranchTag", back_populates="creator")
-    #created_branches = relationship("Branch", back_populates="creator")
-    branch_access = relationship("BranchAccess", foreign_keys="BranchAccess.user_id", back_populates="user")
-
+    permission = relationship("Permission")
+    branch_tags = relationship("BranchTag")
+    created_branches = relationship("Branch")
+    branch_access = relationship("BranchAccess", foreign_keys="BranchAccess.user_id")
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"
@@ -37,9 +36,8 @@ class UserProfile(Base):
     avatar_url = Column(Text)
     social_links = Column(JSONB)
     
-    # Relationships
+    # Удалено неиспользуемое отношение
     user = relationship("User", back_populates="profile")
-    public_page = relationship("Article", back_populates="user_profile")
 
 class ProfileVersion(Base):
     __tablename__ = "profile_versions"
@@ -49,5 +47,4 @@ class ProfileVersion(Base):
     content = Column(JSONB, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # Relationships
     user = relationship("User", back_populates="profile_versions")

@@ -39,8 +39,18 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+def render_item(type_, obj, autogen_context):
+    """Apply custom rendering for selected items."""
 
+    if type_ == "type" and obj.__class__.__module__.startswith("sqlalchemy_utils."):
+        autogen_context.imports.add(f"import {obj.__class__.__module__}")
+        if hasattr(obj, "choices"):
+            return f"{obj.__class__.__module__}.{obj.__class__.__name__}(choices={obj.choices})"
+        else:
+            return f"{obj.__class__.__module__}.{obj.__class__.__name__}()"
 
+        # default rendering for other objects
+    return False
 def get_url():
     """Получаем URL базы данных из настроек или переменной окружения"""
     url = None
@@ -83,6 +93,7 @@ def run_migrations_offline() -> None:
     context.configure(
         url=url,
         target_metadata=target_metadata,
+        render_item=render_item,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
@@ -123,6 +134,7 @@ def run_migrations_online() -> None:
             context.configure(
                 connection=connection,
                 target_metadata=target_metadata,
+                render_item=render_item,
                 compare_type=True,
                 compare_server_default=True,
                 # Включаем сравнение индексов

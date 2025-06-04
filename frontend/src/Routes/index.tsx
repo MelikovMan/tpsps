@@ -1,7 +1,8 @@
-import { Routes, Route, BrowserRouter } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { RoleBasedRoute as RequireAuth } from '../Routes/RoleBasedRoute';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { AnimatePresence } from 'framer-motion';
 
 // Ленивая загрузка страниц
 const HomePage = lazy(() => import('../pages/HomePage'));
@@ -23,15 +24,33 @@ const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
 const ForbiddenPage = lazy(() => import('../pages/ForbiddenPage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 
+const CommitsHistoryPage = lazy(() => import('../pages/CommitHistoryPage'));
+const BranchesPage = lazy(() => import('../pages/BranchesPage'));
+
+
 export default function Router() {
+  const location = useLocation();
   return (
     <Suspense fallback={<LoadingSpinner fullScreen />}>
-    <BrowserRouter>
-      <Routes>
+      <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         {/* Главный макет с AppShell */}
         <Route path="/" element={<HomePage />}>
+          <Route index element={<DashboardPage/>}/>
           <Route path="articles" element={<ArticleListPage />} />
           <Route path="articles/:id" element={<ArticlePage />} />
+
+          <Route path="articles/:id/history" element={
+            <RequireAuth>
+              <CommitsHistoryPage />
+            </RequireAuth>
+          } />
+          
+          <Route path="articles/:id/branches" element={
+            <RequireAuth requiredPermissions={['can_edit']}>
+              <BranchesPage />
+            </RequireAuth>
+          } />
           <Route path="categories" element={<CategoryListPage />} />
           <Route path="categories/:id" element={<CategoryPage />} />
           <Route path="users/:id/profile" element={<UserProfilePage />} />
@@ -86,7 +105,7 @@ export default function Router() {
         <Route path="/forbidden" element={<ForbiddenPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </BrowserRouter>
+      </AnimatePresence>
     </Suspense>
   );
 }

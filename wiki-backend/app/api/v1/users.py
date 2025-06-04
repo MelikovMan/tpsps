@@ -88,10 +88,10 @@ async def get_user_profile(
         )
     
     return UserProfileResponse.model_validate(profile)
-from app.schemas.permission import PermissionBase
+from app.schemas.permission import PermissionBase, PermissionResponse
 from app.models.permission import Permission
 
-@router.get("/me/permissions", response_model=PermissionBase)
+@router.get("/me/permissions", response_model=PermissionResponse)
 async def get_my_permissions(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
@@ -100,7 +100,7 @@ async def get_my_permissions(
     result = await db.execute(
         select(Permission).where(Permission.role == current_user.role)
     )
-    permission = result.one_or_none()
+    permission = result.scalar_one_or_none()
     
     if not permission:
         raise HTTPException(
@@ -108,7 +108,7 @@ async def get_my_permissions(
             detail="Permissions for your role not found"
         )
     
-    return PermissionBase.model_validate(permission)
+    return PermissionResponse.model_validate(permission)
 
 @router.post("/me/profile", response_model=UserProfileResponse)
 async def create_user_profile(

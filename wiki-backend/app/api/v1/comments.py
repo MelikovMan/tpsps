@@ -10,7 +10,7 @@ from app.core.security import get_current_active_user, require_permission
 from app.models.user import User
 from app.models.comment import Comment
 from app.schemas.comment import CommentResponse, CommentCreate, CommentUpdate
-
+from app.services.comment_service import CommentService
 router = APIRouter()
 
 @router.get("/article/{article_id}", response_model=List[CommentResponse])
@@ -20,13 +20,16 @@ async def get_article_comments(
 ):
     result = await db.execute(
         select(Comment)
-        .options(selectinload(Comment.replies))
-        .where(Comment.article_id == article_id, Comment.reply_to_id.is_(None))
-        .order_by(Comment.created_at)
+        .where(Comment.article_id == article_id)
+        # Явно загружаем все уровни вложенности
+        .options(
+            selectinload(Comment.replies)
+        )
     )
     comments = result.scalars().all()
+    comment_service = CommentService(db)
     
-    return [CommentResponse.model_validate(comment) for comment in comments]
+    return await comment_service.build_comment_tree(comments=list(comments))
 
 @router.post("/", response_model=CommentResponse)
 async def create_comment(

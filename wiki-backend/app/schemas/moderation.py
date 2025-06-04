@@ -1,15 +1,19 @@
-# app/schemas/moderation.py
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
 class ModerationBase(BaseModel):
+    reason: Optional[str] = None
+    description: Optional[str] = None
     status: str = "pending"
     comment: Optional[str] = None
 
-class ModerationCreate(ModerationBase):
+class ModerationCreate(BaseModel):
     commit_id: UUID
+    reason: str
+    description: Optional[str] = None
+    reported_by: UUID
 
 class ModerationUpdate(BaseModel):
     status: Optional[str] = None
@@ -20,6 +24,7 @@ class ModerationResponse(ModerationBase):
     
     id: UUID
     commit_id: UUID
-    moderator_id: Optional[UUID] = None
-    resolved_at: Optional[datetime] = None
-
+    reported_by: UUID
+    moderated_by: Optional[UUID] = None
+    created_at: datetime
+    moderated_at: Optional[datetime] = None

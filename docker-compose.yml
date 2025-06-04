@@ -4,7 +4,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "80:3000"
     environment:
       - VITE_API_URL=http://backend:8000
     depends_on:
@@ -18,11 +18,12 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://wiki_user:wiki_password@postgres:5432/wiki_db
+      - DATABASE_URL_SYNC=postgresql://wiki_user:wiki_password@postgres:5432/wiki_db
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
-      - CORS_ORIGINS=http://localhost:3000
+      - CORS_ORIGINS='["http://localhost:3000", "http://127.0.0.1:3000"]'
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,7 +42,7 @@ services:
       POSTGRES_PASSWORD: wiki_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./wiki-backend/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-extensions.sql
+      - ./wiki-backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wiki_user -d wiki_db"]
     networks:

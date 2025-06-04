@@ -1,25 +1,43 @@
-# app/services/branch_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import Row, select, and_
+from sqlalchemy import Row, select, and_, or_
 from typing import List, Optional, Tuple
 from uuid import UUID
 from datetime import datetime
 
 from app.models.article import Branch, Commit, CommitParent, Article
-from app.schemas.article import BranchCreate, BranchCreateFromCommit
+from app.models.user import User
+from app.schemas.article import BranchCreate, BranchCreateFromCommit, BranchUpdate
 
 
 class BranchService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_article_branches(self, article_id: UUID) -> List[Branch]:
-        """Get all branches for a specific article"""
-        query = select(Branch).where(Branch.article_id == article_id).order_by(Branch.created_at.desc())
+    async def get_article_branches(
+        self, 
+        article_id: UUID, 
+        user_id: Optional[UUID] = None,
+        include_private: bool = False
+    ) -> List[Branch]:
+        """Get all branches for a specific article with access control"""
+        query = select(Branch).where(Branch.article_id == article_id)
+        
+        # Apply privacy filter if user is provided
+        if user_id and not include_private:
+            query = query.where(
+                or_(
+                    Branch.is_private == False,
+                    Branch.created_by == user_id
+                )
+            )
+        elif not include_private:
+            query = query.where(Branch.is_private == False)
+        
+        query = query.order_by(Branch.created_at.desc())
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def create_branch(self, branch_data: BranchCreate) -> Branch:
+    async def create_branch(self, branch_data: BranchCreate, created_by: UUID) -> Branch:
         """Create a new branch for an article"""
         # Проверяем существование статьи
         article_query = select(Article).where(Article.id == branch_data.article_id)
@@ -50,11 +68,18 @@ class BranchService:
         if not commit:
             raise ValueError("Head commit not found")
         
+        # Проверяем права доступа к коммиту
+        if commit.article_id != branch_data.article_id:
+            raise ValueError("Head commit doesn't belong to this article")
+        
         branch = Branch(
             article_id=branch_data.article_id,
             name=branch_data.name,
-            description=branch_data.description,
-            head_commit_id=branch_data.head_commit_id
+            description=branch_data.description or "New branch",
+            head_commit_id=branch_data.head_commit_id,
+            is_protected=branch_data.is_protected or False,
+            is_private=branch_data.is_private or False,
+            created_by=created_by
         )
         
         self.db.add(branch)
@@ -65,7 +90,8 @@ class BranchService:
     async def create_branch_from_commit(
         self, 
         article_id: UUID, 
-        branch_data: BranchCreateFromCommit
+        branch_data: BranchCreateFromCommit,
+        created_by: UUID
     ) -> Branch:
         """Create a new branch starting from a specific commit"""
         # Проверяем существование коммита и что он принадлежит статье
@@ -86,19 +112,35 @@ class BranchService:
             article_id=article_id,
             name=branch_data.name,
             description=branch_data.description,
-            head_commit_id=branch_data.source_commit_id
+            head_commit_id=branch_data.source_commit_id,
+            is_protected=branch_data.is_protected,
+            is_private=branch_data.is_private
         )
         
-        return await self.create_branch(branch_create)
+        return await self.create_branch(branch_create, created_by)
 
-    async def get_branch(self, branch_id: UUID) -> Optional[Branch]:
-        """Get a specific branch by ID"""
+    async def get_branch(self, branch_id: UUID, user_id: Optional[UUID] = None) -> Optional[Branch]:
+        """Get a specific branch by ID with access control"""
         query = select(Branch).where(Branch.id == branch_id)
         result = await self.db.execute(query)
-        return result.scalar_one_or_none()
+        branch = result.scalar_one_or_none()
+        
+        if not branch:
+            return None
+        
+        # Check access for private branches
+        if branch.is_private and user_id and branch.created_by != user_id:
+            return None
+        
+        return branch
 
-    async def get_branch_by_name(self, article_id: UUID, branch_name: str) -> Optional[Branch]:
-        """Get a branch by name within an article"""
+    async def get_branch_by_name(
+        self, 
+        article_id: UUID, 
+        branch_name: str, 
+        user_id: Optional[UUID] = None
+    ) -> Optional[Branch]:
+        """Get a branch by name within an article with access control"""
         query = select(Branch).where(
             and_(
                 Branch.article_id == article_id,
@@ -106,11 +148,61 @@ class BranchService:
             )
         )
         result = await self.db.execute(query)
-        return result.scalar_one_or_none()
+        branch = result.scalar_one_or_none()
+        
+        if not branch:
+            return None
+        
+        # Check access for private branches
+        if branch.is_private and user_id and branch.created_by != user_id:
+            return None
+        
+        return branch
 
-    async def delete_branch(self, branch_id: UUID) -> bool:
-        """Delete a branch"""
-        branch = await self.get_branch(branch_id)
+    async def update_branch(
+        self, 
+        branch_id: UUID, 
+        branch_data: BranchUpdate, 
+        user_id: UUID
+    ) -> Optional[Branch]:
+        """Update a branch (only creator or admin can update)"""
+        branch = await self.get_branch(branch_id, user_id)
+        
+        if not branch:
+            return None
+        
+        # Only creator can update the branch
+        if branch.created_by != user_id:
+            raise ValueError("Only branch creator can update the branch")
+        
+        # Cannot rename main branch
+        if branch.name == "main" and branch_data.name and branch_data.name != "main":
+            raise ValueError("Cannot rename main branch")
+        
+        # Check for name uniqueness if name is being changed
+        if branch_data.name and branch_data.name != branch.name:
+            existing_query = select(Branch).where(
+                and_(
+                    Branch.article_id == branch.article_id,
+                    Branch.name == branch_data.name
+                )
+            )
+            existing_result = await self.db.execute(existing_query)
+            if existing_result.scalar_one_or_none():
+                raise ValueError(f"Branch '{branch_data.name}' already exists")
+        
+        # Update fields
+        update_data = branch_data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(branch, field, value)
+        
+        await self.db.commit()
+        await self.db.refresh(branch)
+        return branch
+
+    async def delete_branch(self, branch_id: UUID, user_id: UUID) -> bool:
+        """Delete a branch (only creator can delete, except main branch)"""
+        branch = await self.get_branch(branch_id, user_id)
         
         if not branch:
             return False
@@ -119,6 +211,14 @@ class BranchService:
         if branch.name == "main":
             raise ValueError("Cannot delete main branch")
         
+        # Cannot delete protected branch
+        if branch.is_protected:
+            raise ValueError("Cannot delete protected branch")
+        
+        # Only creator can delete the branch
+        if branch.created_by != user_id:
+            raise ValueError("Only branch creator can delete the branch")
+        
         await self.db.delete(branch)
         await self.db.commit()
         return True
@@ -126,7 +226,8 @@ class BranchService:
     async def get_branch_by_head_commit(
         self, 
         article_id: UUID, 
-        commit_id: UUID
+        commit_id: UUID,
+        user_id: Optional[UUID] = None
     ) -> Optional[Branch]:
         """Get branch where the given commit is the head commit"""
         query = select(Branch).where(
@@ -136,7 +237,16 @@ class BranchService:
             )
         )
         result = await self.db.execute(query)
-        return result.scalar_one_or_none()
+        branch = result.scalar_one_or_none()
+        
+        if not branch:
+            return None
+        
+        # Check access for private branches
+        if branch.is_private and user_id and branch.created_by != user_id:
+            return None
+        
+        return branch
 
     async def merge_branch(
         self, 
@@ -146,9 +256,9 @@ class BranchService:
         message: Optional[str] = None
     ) -> bool:
         """Merge a branch into another branch"""
-        # Get both branches
-        source_branch = await self.get_branch(source_branch_id)
-        target_branch = await self.get_branch(target_branch_id)
+        # Get both branches with access control
+        source_branch = await self.get_branch(source_branch_id, user_id)
+        target_branch = await self.get_branch(target_branch_id, user_id)
         
         if not source_branch or not target_branch:
             return False
@@ -160,6 +270,10 @@ class BranchService:
         # Cannot merge main branch
         if source_branch.name == "main":
             raise ValueError("Cannot merge main branch")
+        
+        # Cannot merge into protected branch without permissions
+        if target_branch.is_protected and target_branch.created_by != user_id:
+            raise ValueError("Cannot merge into protected branch")
         
         # Get head commits
         source_head = await self._get_commit(source_branch.head_commit_id)
@@ -270,9 +384,13 @@ class BranchService:
         
         return count
 
-    async def get_branches_with_commit_count(self, article_id: UUID) -> List[Tuple[Branch, int]]:
+    async def get_branches_with_commit_count(
+        self, 
+        article_id: UUID, 
+        user_id: Optional[UUID] = None
+    ) -> List[Tuple[Branch, int]]:
         """Get all branches for an article with commit counts"""
-        branches = await self.get_article_branches(article_id)
+        branches = await self.get_article_branches(article_id, user_id)
         result = []
         
         for branch in branches:
@@ -280,3 +398,32 @@ class BranchService:
             result.append((branch, count))
         
         return result
+
+    async def get_user_branches(
+        self, 
+        user_id: UUID, 
+        article_id: Optional[UUID] = None
+    ) -> List[Branch]:
+        """Get all branches created by a user"""
+        query = select(Branch).where(Branch.created_by == user_id)
+        
+        if article_id:
+            query = query.where(Branch.article_id == article_id)
+        
+        query = query.order_by(Branch.created_at.desc())
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    async def can_access_branch(self, branch_id: UUID, user_id: UUID) -> bool:
+        """Check if user can access a branch"""
+        branch = await self.get_branch(branch_id)
+        
+        if not branch:
+            return False
+        
+        # Public branches are accessible to everyone
+        if not branch.is_private:
+            return True
+        
+        # Private branches are only accessible to creator
+        return branch.created_by == user_id

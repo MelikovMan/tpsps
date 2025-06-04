@@ -11,11 +11,12 @@ from app.core.security import get_current_active_user, require_permission
 from app.models.user import User
 from app.models.article import Article, Commit, Branch, CommitParent
 from app.schemas.article import (
-    ArticleResponse, ArticleCreate, ArticleUpdate,
+    ArticleResponse, ArticleCreate, ArticleResponseOne, ArticleUpdate,
     CommitResponse, CommitCreate,
     BranchResponse, BranchCreate
 )
 from app.services.commit_service import CommitService
+from app.utils.md_to_html import md_to_html
 router = APIRouter()
 
 @router.get("/", response_model=List[ArticleResponse])
@@ -41,7 +42,7 @@ async def get_articles(
     
     return [ArticleResponse.model_validate(article) for article in articles]
 
-@router.get("/{article_id}", response_model=ArticleResponse)
+@router.get("/{article_id}", response_model=ArticleResponseOne)
 async def get_article(
     article_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -53,16 +54,35 @@ async def get_article(
         .where(Article.id == article_id)
         
     )
-    article = result.one_or_none()
+    article = result.scalar_one_or_none()
     if not article:
         raise HTTPException(status_code=404,detail="Article not found")
     commit_service = CommitService(db)
-    full_content = await commit_service.rebuild_content_at_commit(article.current_commit_id)
+    branch_query = await db.execute(
+        select(Branch)
+        .where(Branch.article_id==article_id)
+        .where(Branch.name==branch)
+    )
+    branch_result = branch_query.scalar_one_or_none()
+    if not branch_result:
+        raise HTTPException(status_code=404,detail="Branch name not found")
+    
+    full_content = await commit_service.rebuild_content_at_commit(branch_result.head_commit_id)
     if not full_content:
         raise HTTPException(status_code=404,detail="Failed to extact content of the head commit")
     # Формируем ответ с дополнительным полем content
-    response = ArticleResponse.model_validate(article)
-    response.content = full_content
+    #response = ArticleResponseOne.model_validate(article)
+    parsed_html= await md_to_html(full_content)
+    response=ArticleResponseOne(
+        title=article.title,
+        id=article.id,
+        status=article.status,
+        article_type=article.article_type,
+        current_commit_id=article.current_commit_id,
+        created_at=article.created_at,
+        updated_at=article.updated_at,
+        content=parsed_html,
+    )
     return response
 
 @router.post("/", response_model=ArticleResponse)
@@ -97,7 +117,8 @@ async def create_article(
     main_branch = Branch(
         article_id=article.id,
         name="main",
-        head_commit_id=commit.id
+        head_commit_id=commit.id,
+        created_by=current_user.id,
     )
     db.add(main_branch)
     
