@@ -9,6 +9,8 @@ import BranchesPanel from '../components/BranchesPanel';
 import ArticleNavigation from '../components/ArticleNavigation';
 import CommentsSection from '../components/CommentSection';
 
+import { MemoizedMarkdown } from '../components/MarkdownRenderer';
+
 export default function ArticlePage() {
   const { id: articleId } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -135,13 +137,7 @@ export default function ArticlePage() {
 
             <Tabs.Panel value="content">
               <Card withBorder p="xl" radius="md">
-                <div 
-                  dangerouslySetInnerHTML={{ __html: article.content }}
-                  style={{
-                    lineHeight: 1.6,
-                    fontSize: '16px'
-                  }}
-                />
+                <MemoizedMarkdown content={article.content}/>
               </Card>
               
               {currentBranch && currentBranch.name !== 'main' && (

@@ -8,7 +8,7 @@ from datetime import datetime
 import difflib
 import re
 from typing import List, Tuple, Optional
-from app.models.article import Commit, Branch, CommitParent, Article
+from app.models.article import ArticleFull, Commit, Branch, CommitParent, Article
 from app.models.user import User
 from app.schemas.article import CommitResponse, CommitCreateInternal, CommitResponseDetailed, DiffResponse
 
@@ -158,9 +158,17 @@ class CommitService:
         # Обновляем head ветки
         branch.head_commit_id = new_commit.id
         
+        full_content = ArticleFull(
+            article_id=article_id,
+            commit_id=new_commit.id,
+            text = self.rebuild_content_at_commit(new_commit.id)
+        )
+        self.db.add(full_content)
+
         await self.db.commit()
         await self.db.refresh(new_commit)
         
+
         return new_commit
 
     def _create_diff(self, old_content: str, new_content: str) -> str:

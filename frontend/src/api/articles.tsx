@@ -1,7 +1,7 @@
 // src/api/articles.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from './client';
-import { type ArticleCreate, type ArticleFullResponse, type ArticleResponse, type ArticleUpdate, type BranchCreate, type BranchCreateFromCommit, type BranchResponse, type CommitCreate, type CommitResponse, type CommitResponseDetailed, type DiffResponse, type MergeBranchRequest } from './article';
+import { type ArticleCreate, type ArticleEditCommit, type ArticleFullResponse, type ArticleResponse, type ArticleUpdate, type BranchCreate, type BranchCreateFromCommit, type BranchResponse, type CommitCreate, type CommitResponse, type CommitResponseDetailed, type DiffResponse, type MergeBranchRequest } from './article';
 
 interface ArticlesQueryParams {
   skip?: number;
@@ -275,30 +275,86 @@ export const useCreateArticle = () => {
 };
 
 // Обновление статьи
-export const useUpdateArticle = () => {
+export const useEditArticle = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ articleId, articleData }: { articleId: string; articleData: ArticleUpdate }) => {
-      const response = await apiClient.put<ArticleResponse>(`/articles/${articleId}`, {
-        title: articleData.title,
-        content: articleData.content,
-        status: articleData.status,
-        article_type: articleData.article_type,
-        message: articleData.message || 'Update article'
-      });
+    mutationFn: async ({ 
+      articleId, 
+      editData, 
+      branch = 'main' 
+    }: { 
+      articleId: string; 
+      editData: ArticleEditCommit; 
+      branch?: string;
+    }) => {
+      // Сначала получаем информацию о ветке
+      const branchResponse = await apiClient.get<BranchResponse>(
+        `/branches/article/${articleId}/by-name/${branch}`
+      );
+      
+      // Создаем коммит в указанной ветке
+      const commitData: CommitCreate = {
+        message: editData.message,
+        content: editData.content,
+        branch_id: branchResponse.data.id
+      };
+      
+      const response = await apiClient.post<CommitResponse>(
+        `/commits/article/${articleId}`, 
+        commitData
+      );
+      
       return response.data;
     },
     onSuccess: (_, variables) => {
-      // Обновляем кэш конкретной статьи и список статей
+      // Инвалидируем все связанные кэши
       queryClient.invalidateQueries({ queryKey: ['article', variables.articleId] });
-      queryClient.invalidateQueries({ queryKey: ['articles'] });
+      queryClient.invalidateQueries({ queryKey: ['commits', 'article', variables.articleId] });
+      queryClient.invalidateQueries({ queryKey: ['branches', variables.articleId] });
+      
+      // Если редактировали не main ветку, инвалидируем и её кэш
+      if (variables.branch && variables.branch !== 'main') {
+        queryClient.invalidateQueries({ queryKey: ['article', variables.articleId, variables.branch] });
+      }
     },
     onError: (error) => {
-      console.error('Error updating article:', error);
+      console.error('Error editing article:', error);
     }
   });
 };
+
+// Альтернативный хук для быстрого редактирования с автоматическим сообщением коммита
+export const useQuickEditArticle = () => {
+  const editArticle = useEditArticle();
+  //const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      articleId, 
+      content, 
+      branch = 'main',
+      customMessage 
+    }: { 
+      articleId: string; 
+      content: string; 
+      branch?: string;
+      customMessage?: string;
+    }) => {
+      const message = customMessage || `Update article content (${new Date().toISOString()})`;
+      
+      return editArticle.mutateAsync({
+        articleId,
+        branch,
+        editData: {
+          message,
+          content
+        }
+      });
+    },
+  });
+};
+
 
 // Удаление статьи
 export const useDeleteArticle = () => {

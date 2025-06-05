@@ -55,6 +55,7 @@ class Commit(Base):
     moderations = relationship("Moderation", back_populates="commit")
     media = relationship("Media", back_populates="commit")
     branches = relationship("Branch", back_populates="head_commit")
+    text = relationship("ArticleFull",back_populates="commit_fulls")
 
 class CommitParent(Base):
     __tablename__ = "commit_parents"
@@ -98,3 +99,18 @@ class Branch(Base):
     creator = relationship("User")
     tags = relationship("BranchTag", back_populates="branch")
     user_access = relationship("BranchAccess", back_populates="branch")
+
+class ArticleFull(Base):
+    __tablename__ = "articles_full_text"
+    __table_args__ = (
+        Index('ix_articles_full_article_id', 'article_id'),
+        Index('ix_articles_full_commit_id', 'commit_id'),
+    )
+
+    article_id = Column(UUID(as_uuid=True), ForeignKey("articles.id"), primary_key=True)
+    commit_id = Column(UUID(as_uuid=True), ForeignKey("commits.id"), primary_key=True)
+    text = Column(Text, nullable=False)
+    
+    # Убраны циклические зависимости
+    article = relationship("Article")
+    commit_fulls = relationship("Commit", back_populates="text")

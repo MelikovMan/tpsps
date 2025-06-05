@@ -98,3 +98,10 @@ export interface ArticleUpdate {
   article_type?: string;
   message?: string;
 }
+
+// Новый интерфейс для редактирования статьи через коммиты
+export interface ArticleEditCommit {
+  message: string;
+  content: string;
+  branch?: string; // Имя ветки, если не указано - используется текущая ветка
+}

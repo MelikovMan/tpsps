@@ -108,6 +108,15 @@ export default function MainPage() {
                 variant="filled"
               />
             )}
+            {isAuthenticated && (
+              <NavLink
+                component={Link}
+                to="/articles/create"
+                label="Создать страницу!"
+                active={isActive('/articles/create')}
+                variant="filled"
+              />
+            )}
           </AppShell.Section>
         </AppShell.Navbar>
       <AppShell.Main>

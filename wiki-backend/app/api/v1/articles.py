@@ -9,7 +9,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.core.security import get_current_active_user, require_permission
 from app.models.user import User
-from app.models.article import Article, Commit, Branch, CommitParent
+from app.models.article import Article, ArticleFull, Commit, Branch, CommitParent
 from app.schemas.article import (
     ArticleResponse, ArticleCreate, ArticleResponseOne, ArticleUpdate,
     CommitResponse, CommitCreate,
@@ -67,12 +67,21 @@ async def get_article(
     if not branch_result:
         raise HTTPException(status_code=404,detail="Branch name not found")
     
-    full_content = await commit_service.rebuild_content_at_commit(branch_result.head_commit_id)
+    full_content_result = await db.execute(
+        select(ArticleFull.text)
+        .where(ArticleFull.article_id==article_id)
+        .where(ArticleFull.commit_id==branch_result.head_commit_id)
+    )
+    full_content = full_content_result.scalar_one_or_none()
+    if not full_content:
+        full_content = await commit_service.rebuild_content_at_commit(branch_result.head_commit_id)
+
     if not full_content:
         raise HTTPException(status_code=404,detail="Failed to extact content of the head commit")
+    
     # Формируем ответ с дополнительным полем content
     #response = ArticleResponseOne.model_validate(article)
-    parsed_html= await md_to_html(full_content)
+    #parsed_html= await md_to_html(full_content)
     response=ArticleResponseOne(
         title=article.title,
         id=article.id,
@@ -81,7 +90,7 @@ async def get_article(
         current_commit_id=article.current_commit_id,
         created_at=article.created_at,
         updated_at=article.updated_at,
-        content=parsed_html,
+        content=full_content,
     )
     return response
 
@@ -121,10 +130,17 @@ async def create_article(
         created_by=current_user.id,
     )
     db.add(main_branch)
-    
+    commit_service = CommitService(db)
+    await db.commit()
+
+    full_text = ArticleFull(
+        article_id=article.id,
+        commit_id = commit.id,
+        text = await commit_service.rebuild_content_at_commit(commit.id)
+    )
+    db.add(full_text)
     await db.commit()
     await db.refresh(article)
-    
     return ArticleResponse.model_validate(article)
 
 @router.put("/{article_id}", response_model=ArticleResponse)

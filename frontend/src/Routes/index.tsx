@@ -45,7 +45,11 @@ export default function Router() {
               <CommitsHistoryPage />
             </RequireAuth>
           } />
-          
+          <Route path="articles/create" element={
+            <RequireAuth>
+              <ArticleCreatePage />
+            </RequireAuth>
+          } />
           <Route path="articles/:id/branches" element={
             <RequireAuth requiredPermissions={['can_edit']}>
               <BranchesPage />

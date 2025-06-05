@@ -11,6 +11,15 @@ from sqlalchemy.sql import table, column
 from sqlalchemy.dialects import postgresql
 import uuid
 from datetime import datetime, timezone
+import bcrypt
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
 
 # revision identifiers
 revision = 'a1b2c3d4e5f6'
@@ -128,17 +137,16 @@ def upgrade() -> None:
     web_subcat_id = uuid.uuid4()
     science_cat_id = uuid.uuid4()
     
-    # IDs для статей
-    article1_id = uuid.uuid4()
-    article2_id = uuid.uuid4()
-    article3_id = uuid.uuid4()
+    article1_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440001')  # FastAPI tutorial
+    article2_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440002')  # PostgreSQL guide
+    article3_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440003')  # ML basics
     
-    # IDs для коммитов
-    commit1_id = uuid.uuid4()
-    commit2_id = uuid.uuid4()
-    commit3_id = uuid.uuid4()
-    commit4_id = uuid.uuid4()
-    commit5_id = uuid.uuid4()
+    # IDs коммитов (из seed_test_data.py)
+    commit1_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440011')  # FastAPI initial
+    commit2_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440012')  # FastAPI installation
+    commit3_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440013')  # PostgreSQL initial
+    commit4_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440014')  # ML initial
+    commit5_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440015')  # FastAPI testing
     
     # IDs для веток
     main_branch1_id = uuid.uuid4()
@@ -200,7 +208,7 @@ def upgrade() -> None:
             'id': admin_id,
             'username': 'admin',
             'email': 'admin@example.com',
-            'password_hash': '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/lewf/TlCGF2o/7QIm',  # password: admin123
+            'password_hash': get_password_hash("admin123"),
             'role': 'admin',
             'created_at': now,
             'last_login': now
@@ -209,7 +217,7 @@ def upgrade() -> None:
             'id': editor_id,
             'username': 'editor',
             'email': 'editor@example.com',
-            'password_hash': '$2b$12$8Xw9rGhZ7dR2nK5mF3qL4e.vN8pT1sA6bC9xY2wE4fH7jM0uI5vG3',  # password: editor123
+            'password_hash': get_password_hash("editor123"),
             'role': 'editor',
             'created_at': now,
             'last_login': now
@@ -218,7 +226,7 @@ def upgrade() -> None:
             'id': author_id,
             'username': 'john_author',
             'email': 'john@example.com',
-            'password_hash': '$2b$12$3Kf6gH8mN2pQ4rT7vX1zA5.bC8dE9fG2hI4jK6lM8nO0pR3sU5wY7',  # password: author123
+            'password_hash': get_password_hash("author123"),  # password: author123
             'role': 'author',
             'created_at': now,
             'last_login': now
@@ -227,7 +235,7 @@ def upgrade() -> None:
             'id': reader_id,
             'username': 'reader_user',
             'email': 'reader@example.com',
-            'password_hash': '$2b$12$9Vt2xA4bE6fH8kL1mP3qS5.cD7eF0gI3jK5nM8oQ1rT4vW7yZ9zA2',  # password: reader123
+            'password_hash': get_password_hash("reader123"),  # password: reader123
             'role': 'reader',
             'created_at': now,
             'last_login': now
@@ -384,36 +392,43 @@ FastAPI is a modern, fast (high-performance), web framework for building APIs wi
             'created_at': now,
             'is_merge': False
         },
-        {
+                {
             'id': commit2_id,
             'article_id': article1_id,
             'author_id': author_id,
             'message': 'Add installation and basic example sections',
-            'content_diff': '''## Installation
-
-```bash
-pip install fastapi
-pip install "uvicorn[standard]"
-```
-
-## Basic Example
-
-```python
-from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
-```''',
+            'content_diff': '''--- previous
++++ current
+@@ -11,3 +11,21 @@ FastAPI is a modern, fast (high-performance), web framework for building APIs w
+ - Short: Minimize code duplication
+ - Robust: Get production-ready code with automatic interactive documentation
+ 
++## Installation
++
++```bash
++pip install fastapi
++pip install "uvicorn[standard]"
++```
++
++## Basic Example
++
++```python
++from fastapi import FastAPI
++
++app = FastAPI()
++
++@app.get("/")
++def read_root():
++    return {"Hello": "World"}
++
++@app.get("/items/{item_id}")
++def read_item(item_id: int, q: str = None):
++    return {"item_id": item_id, "q": q}
++```''',
             'created_at': now,
             'is_merge': False
         },
+
         {
             'id': commit3_id,
             'article_id': article2_id,
@@ -455,16 +470,24 @@ Machine learning is a subset of artificial intelligence that enables computers t
             'article_id': article1_id,
             'author_id': editor_id,
             'message': 'Review and improvements to FastAPI tutorial',
-            'content_diff': '''## Testing Your API
-
-To test your FastAPI application:
-
-```bash
-uvicorn main:app --reload
-```
-
-Visit http://127.0.0.1:8000 to see your API in action.
-Visit http://127.0.0.1:8000/docs for interactive API documentation.''',
+            'content_diff': '''--- previous
++++ current
+@@ -31,3 +31,11 @@ app = FastAPI()
+ @app.get("/items/{item_id}")
+ def read_item(item_id: int, q: str = None):
+     return {"item_id": item_id, "q": q}
++```
++
++## Testing Your API
++
++To test your FastAPI application:
++
++```bash
++uvicorn main:app --reload
+ ```
++
++Visit http://127.0.0.1:8000 to see your API in action.
++Visit http://127.0.0.1:8000/docs for interactive API documentation.''',
             'created_at': now,
             'is_merge': False
         }

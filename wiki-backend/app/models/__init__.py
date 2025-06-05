@@ -1,6 +1,6 @@
 # app/models/__init__.py
 from .user import User, UserProfile, ProfileVersion
-from .article import Article, Commit, CommitParent, Branch
+from .article import Article, Commit, CommitParent, Branch, ArticleFull
 from .category import Category, ArticleCategory
 from .tag import Tag, TagPermission
 from .moderation import Moderation
@@ -16,5 +16,5 @@ __all__ = [
     "Category", "ArticleCategory",
     "Tag", "TagPermission",
     "Moderation", "Comment", "Media", "Template", "Permission",
-    "BranchTag","BranchAccess","BranchTagPermission"
+    "BranchTag","BranchAccess","BranchTagPermission", "ArticleFull"
 ]
