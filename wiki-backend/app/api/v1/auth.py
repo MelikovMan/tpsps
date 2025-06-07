@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.security import verify_password, create_access_token, get_password_hash
-from app.models.user import User
+from app.models.user import User, UserProfile
 from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest
 from app.schemas.user import RegisterResponse, UserResponse
 from app.core.config import settings
@@ -76,6 +76,12 @@ async def register(
     )
     await db.commit()
     await db.refresh(new_user)
+    new_profile = UserProfile (
+        user_id=new_id,
+        bio="Hello, " + request.username +", this is your profile."
+    )
+    db.add(new_profile)
+    await db.commit()
     new_user_response = RegisterResponse(
         id=new_id, 
         username=request.username,
