@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     MINIO_SECRET_KEY: str = Field("minioadmin", alias="MINIO_SECRET_KEY")
     MINIO_SECURE: bool = Field(False, alias="MINIO_SECURE")
     MINIO_DEFAULT_BUCKET: str = Field("media-files", alias="MINIO_DEFAULT_BUCKET")
+    minio_public_url: str = Field("http://localhost:9000", alias="MINIO_PUBLIC_URL")
 
 
     class Config:

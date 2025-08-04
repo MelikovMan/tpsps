@@ -18,7 +18,9 @@ import { notifications } from '@mantine/notifications';
 import { IconCheck, IconX, IconDeviceFloppy, IconEye } from '@tabler/icons-react';
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
 import { useCreateArticle } from '../api/articles';
-
+import TurndownService from 'turndown';
+import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
+import { marked } from 'marked';
 interface ArticleFormData {
   title: string;
   status: string;
@@ -38,7 +40,8 @@ const typeOptions = [
   { value: 'tutorial', label: 'Руководство' },
   { value: 'blog', label: 'Блог' },
 ];
-
+const turndownService = new TurndownService();
+turndownService.use(turndownGfm);
 export default function ArticleCreatePage() {
   const navigate = useNavigate();
   const editorRef = useRef<RichTextEditorRef>(null);
@@ -83,9 +86,10 @@ export default function ArticleCreatePage() {
     }
 
     try {
+      const markdownContent =  turndownService.turndown(content);
       const articleData = {
         title: values.title.trim(),
-        content,
+        content: markdownContent,
         status: values.status,
         article_type: values.article_type,
         message: values.message.trim(),

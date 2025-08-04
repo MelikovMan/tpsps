@@ -31,6 +31,9 @@ import {
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
 import { useArticle, useEditArticle, useArticleBranches } from '../api/articles';
 import TurndownService from 'turndown';
+import MarkdownRenderer, { MemoizedMarkdown } from '../components/MarkdownRenderer';
+//import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
+import { marked } from 'marked';
 interface ArticleEditFormData {
   title: string;
   status: string;
@@ -50,18 +53,19 @@ const typeOptions = [
   { value: 'tutorial', label: 'Руководство' },
   { value: 'blog', label: 'Блог' },
 ];
-
+const turndownService = new TurndownService();
+//turndownService.use(turndownGfm);
 export default function ArticleEditPage() {
   const navigate = useNavigate();
   const { articleId } = useParams<{ articleId: string }>();
   const [searchParams] = useSearchParams();
-  const branch = searchParams.get('branch') || 'main';
+  const branch = searchParams.get('branch') ?? 'main';
   
   const editorRef = useRef<RichTextEditorRef>(null);
   const [content, setContent] = useState('');
   const [contentError, setContentError] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   const { data: article, isLoading: articleLoading, error: articleError } = useArticle(articleId!, branch);
   const { data: branches } = useArticleBranches(articleId!);
   const editArticleMutation = useEditArticle();
@@ -89,12 +93,15 @@ export default function ArticleEditPage() {
         article_type: article.article_type,
         message: `Обновление статьи "${article.title}"`,
       });
-      setContent(article.content);
+      marked.parse(article.content, {async:true})
+      .then(htmlContent=>{
+        setContent(htmlContent);
+        setTimeout(() => {
+        editorRef.current?.setContent(htmlContent);
+      }, 100);
+      });
       
       // Устанавливаем контент в редактор после его инициализации
-      setTimeout(() => {
-        editorRef.current?.setContent(article.content);
-      }, 100);
     }
   }, [article]);
 
@@ -147,12 +154,13 @@ export default function ArticleEditPage() {
     }
 
     try {
+      const markdownContent = turndownService.turndown(content);
       await editArticleMutation.mutateAsync({
         articleId: articleId!,
         branch,
         editData: {
           message: values.message.trim(),
-          content,
+          content: markdownContent,
         },
       });
 

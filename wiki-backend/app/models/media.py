@@ -1,17 +1,29 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Integer
+from sqlalchemy import Column, String, DateTime, Table, Text, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 
 from app.core.database import Base
+article_media_association = Table(
+    'article_media',
+    Base.metadata,
+    Column('article_id', UUID(as_uuid=True), ForeignKey('articles.id'), primary_key=True),
+    Column('media_id', UUID(as_uuid=True), ForeignKey('media.id'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now())
+)
 
+commit_media_association = Table(
+    'commit_media',
+    Base.metadata,
+    Column('commit_id', UUID(as_uuid=True), ForeignKey('commits.id'), primary_key=True),
+    Column('media_id', UUID(as_uuid=True), ForeignKey('media.id'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now())
+)
 class Media(Base):
     __tablename__ = "media"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    article_id = Column(UUID(as_uuid=True), ForeignKey("articles.id"), nullable=False)
-    commit_id = Column(UUID(as_uuid=True), ForeignKey("commits.id"), nullable=False)
     
     # Оригинальное имя файла
     original_filename = Column(String(255), nullable=False)
@@ -39,5 +51,14 @@ class Media(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    article = relationship("Article", back_populates="media")
-    commit = relationship("Commit", back_populates="media")
+    articles = relationship(
+        "Article", 
+        secondary=article_media_association,
+        back_populates="media"
+    )
+    
+    commits = relationship(
+        "Commit",
+        secondary=commit_media_association,
+        back_populates="media"
+    )

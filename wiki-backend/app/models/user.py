@@ -16,6 +16,7 @@ class User(Base):
     role = Column(String(20), ForeignKey("permissions.role"), nullable=False, default="user")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login = Column(DateTime(timezone=True))
+    is_active = Column(Boolean, nullable=False, default=True)
     
     # Отношения с каскадным удалением
     profile = relationship(

@@ -1,6 +1,6 @@
 import { AppShell, Group, NavLink, Text, Anchor, Box, Burger } from '@mantine/core';
 import { Outlet, useLocation, Link } from 'react-router-dom';
-import { IconHome, IconArticle, IconCategory, IconUser, IconShield, IconSettings } from '@tabler/icons-react';
+import { IconHome, IconArticle, IconCategory, IconUser, IconShield, IconSettings, IconPhoto } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo.tsx';
 import UserMenu from '../components/UserMenu.tsx';
@@ -28,6 +28,7 @@ export default function MainPage() {
     { path: '/users', label: 'Пользователи', icon: <IconUser size="1rem" />, required: ['can_moderate'] },
     { path: '/moderation', label: 'Модерация', icon: <IconShield size="1rem" />, required: ['can_moderate'] },
     { path: '/admin', label: 'Администрирование', icon: <IconSettings size="1rem" />, required: ['can_delete'] },
+    { path: '/media/upload', label: 'Загрузка медиа', icon: <IconPhoto size="1rem" />, required: ['can_edit']},
   ];
 
   // Проверка активной ссылки
@@ -128,6 +129,27 @@ export default function MainPage() {
         </AnimatePresence>
       </Box>
       </AppShell.Main>
+       <AppShell.Footer p="md" withBorder>
+          <Group justify='center'>
+            <Text size="sm" c="dimmed">
+              © {new Date().getFullYear()} Вики-Система
+            </Text>
+            <Anchor component={Link} to="/about" size="sm">
+              О проекте
+            </Anchor>
+            <Anchor component={Link} to="/help" size="sm">
+              Помощь
+            </Anchor>
+            <Anchor component={Link} to="/contacts" size="sm">
+              Контакты
+            </Anchor>
+            {isAuthenticated && user?.role === 'admin' && (
+              <Anchor component={Link} to="/admin" size="sm">
+                Админ-панель
+              </Anchor>
+            )}
+          </Group>
+      </AppShell.Footer>
     </AppShell>
   );
 }

@@ -6,6 +6,9 @@ from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 from uuid import UUID
 
+from fastapi_cache.decorator import cache
+from app.core.config import settings
+
 from app.core.database import get_db
 from app.core.security import get_current_active_user, require_permission
 from app.models.user import User
@@ -20,6 +23,7 @@ from app.utils.md_to_html import md_to_html
 router = APIRouter()
 
 @router.get("/", response_model=List[ArticleResponse])
+@cache(expire=settings.cache_expire)
 async def get_articles(
     skip: int = 0,
     limit: int = 100,
@@ -43,6 +47,7 @@ async def get_articles(
     return [ArticleResponse.model_validate(article) for article in articles]
 
 @router.get("/{article_id}", response_model=ArticleResponseOne)
+@cache(expire=settings.cache_expire)
 async def get_article(
     article_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -202,6 +207,7 @@ async def delete_article(
     return {"message": f"Article {article_id} deleted successfully"}
 
 @router.get("/{article_id}/commits", response_model=List[CommitResponse])
+@cache(expire=settings.cache_expire)
 async def get_article_commits(
     article_id: UUID,
     skip: int = 0,
@@ -220,6 +226,7 @@ async def get_article_commits(
     return [CommitResponse.model_validate(commit) for commit in commits]
 
 @router.get("/{article_id}/branches", response_model=List[BranchResponse])
+@cache(expire=settings.cache_expire)
 async def get_article_branches(
     article_id: UUID,
     db: AsyncSession = Depends(get_db)

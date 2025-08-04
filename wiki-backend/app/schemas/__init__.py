@@ -40,7 +40,7 @@ from .comment import (
 
 # Media schemas
 from .media import (
-    MediaBase, MediaCreate, MediaUpdate, MediaResponse, MediaUploadResponse
+    MediaBase, MediaCreate, MediaResponse, MediaUploadResponse
 )
 
 # Moderation schemas

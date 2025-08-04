@@ -6,11 +6,14 @@ from sqlalchemy import func, select, delete
 from sqlalchemy.orm import selectinload
 from uuid import UUID
 
+from fastapi_cache.decorator import cache
+from app.core.config import settings
+
 from app.core.database import get_db
 from app.core.security import get_current_active_user, get_password_hash, require_permission
 from app.models.user import User, UserProfile, ProfileVersion
 from app.schemas.user import (
-    UserResponse, UserCreate, UserUpdate,
+    UserResponse, UserCreate, UserStatusUpdate, UserUpdate,
     UserProfileResponse, UserProfileCreate, UserProfileUpdate,
     ProfileVersionResponse
 )
@@ -18,6 +21,7 @@ from app.schemas.user import (
 router = APIRouter()
 
 @router.get("/", response_model=List[UserResponse])
+@cache(expire=settings.cache_expire)
 async def get_users(
     skip: int = 0,
     limit: int = 100,
@@ -36,7 +40,63 @@ async def get_current_user_info(
 ):
     return UserResponse.model_validate(current_user)
 
+@router.get("/search", response_model=List[UserResponse])
+async def search_users(
+    q: Optional[str] = None,
+    role: Optional[str] = None,
+    status: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("moderate"))
+):
+    """Поиск пользователей с фильтрами"""
+    query = select(User)
+    
+    if q:
+        query = query.where(
+            (User.username.ilike(f"%{q}%")) | 
+            (User.email.ilike(f"%{q}%"))
+        )
+    
+    if role:
+        role_list = role.split(',')
+        query = query.where(User.role.in_(role_list))
+    
+    if status:
+        if status == 'active':
+            query = query.where(User.is_active == True)
+        elif status == 'blocked':
+            query = query.where(User.is_active == False)
+
+    query = query.offset(skip).limit(limit).order_by(User.created_at.desc())
+    
+    result = await db.execute(query)
+    users = result.scalars().all()
+    
+    return [UserResponse.model_validate(user) for user in users]
+
+@router.get("/me/profile", response_model=UserProfileResponse)
+async def get_my_profile(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Получение профиля текущего пользователя"""
+    result = await db.execute(
+        select(UserProfile).options(selectinload(UserProfile.user))
+        .where(UserProfile.user_id == current_user.id)
+    )
+    profile = result.scalar_one_or_none()
+    
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User profile not found"
+        )
+    
+    return UserProfileResponse.model_validate(profile)
 @router.get("/{user_id}", response_model=UserResponse)
+@cache(expire=settings.cache_expire)
 async def get_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db)
@@ -127,6 +187,7 @@ async def delete_user(
 
 # Эндпоинты для работы с профилем
 @router.get("/{user_id}/profile", response_model=UserProfileResponse)
+@cache(expire=settings.cache_expire)
 async def get_user_profile(
     user_id: UUID,
     db: AsyncSession = Depends(get_db)
@@ -134,26 +195,6 @@ async def get_user_profile(
     result = await db.execute(
         select(UserProfile).options(selectinload(UserProfile.user))
         .where(UserProfile.user_id == user_id)
-    )
-    profile = result.scalar_one_or_none()
-    
-    if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User profile not found"
-        )
-    
-    return UserProfileResponse.model_validate(profile)
-
-@router.get("/me/profile", response_model=UserProfileResponse)
-async def get_my_profile(
-    current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Получение профиля текущего пользователя"""
-    result = await db.execute(
-        select(UserProfile).options(selectinload(UserProfile.user))
-        .where(UserProfile.user_id == current_user.id)
     )
     profile = result.scalar_one_or_none()
     
@@ -448,6 +489,8 @@ async def create_user_by_admin(
     
     return UserResponse.model_validate(user)
 
+
+
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user_by_admin(
     user_id: UUID,
@@ -500,36 +543,41 @@ async def update_user_by_admin(
     return UserResponse.model_validate(user)
 
 # Также добавить эндпоинт для поиска пользователей
-@router.get("/search", response_model=List[UserResponse])
-async def search_users(
-    q: Optional[str] = None,
-    role: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 100,
+
+
+@router.patch("/{user_id}/status", response_model=UserResponse)
+async def update_user_status(
+    user_id: UUID,
+    status_update: UserStatusUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("moderate"))
 ):
-    """Поиск пользователей с фильтрами"""
-    query = select(User)
+    """Изменение статуса пользователя (активация/блокировка)"""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
     
-    if q:
-        query = query.where(
-            (User.username.ilike(f"%{q}%")) | 
-            (User.email.ilike(f"%{q}%"))
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
         )
     
-    if role:
-        query = query.where(User.role == role)
+    # Запрещаем блокировать самого себя
+    if user.id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change your own status"
+        )
     
-    query = query.offset(skip).limit(limit).order_by(User.created_at.desc())
+    user.is_active = status_update.is_active
     
-    result = await db.execute(query)
-    users = result.scalars().all()
+    await db.commit()
+    await db.refresh(user)
     
-    return [UserResponse.model_validate(user) for user in users]
-
+    return UserResponse.model_validate(user)
 # Эндпоинт для получения статистики пользователей
 @router.get("/stats")
+@cache(expire=settings.cache_expire)
 async def get_users_stats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("moderate"))

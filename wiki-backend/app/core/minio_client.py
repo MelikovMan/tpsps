@@ -1,3 +1,4 @@
+import json
 from minio import Minio
 from minio.error import S3Error
 from app.core.config import settings
@@ -74,6 +75,29 @@ class MinIOClient:
             return True
         except S3Error:
             return False
+        
+    async def ensure_public_policy(self, bucket_name: str):
+        """Устанавливает публичную политику чтения для бакета"""
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"arn:aws:s3:::{bucket_name}/*"]
+                }
+            ]
+        }
+        
+        try:
+            self.client.set_bucket_policy(bucket_name, json.dumps(policy))
+            logger.info(f"Public policy set for bucket '{bucket_name}'")
+            return True
+        except S3Error as e:
+            logger.error(f"Error setting public policy: {e}")
+            return False
+    
 
 # Глобальный экземпляр клиента
 minio_client = MinIOClient()

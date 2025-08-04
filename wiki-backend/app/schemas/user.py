@@ -68,3 +68,6 @@ class UserSearchFilter(BaseModel):
     role: Optional[str] = None
     created_after: Optional[datetime] = None
     created_before: Optional[datetime] = None
+    
+class UserStatusUpdate(BaseModel):
+    is_active: bool = Field(..., description="Статус активности пользователя")

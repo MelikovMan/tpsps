@@ -1,40 +1,38 @@
-# app/schemas/media.py
 from pydantic import BaseModel, ConfigDict
-from datetime import datetime
 from uuid import UUID
-from typing import Optional
+from datetime import datetime
+from typing import List, Optional
 
 class MediaBase(BaseModel):
     original_filename: str
+    bucket_name: str
+    object_key: str
     mime_type: str
     file_size: int
 
 class MediaCreate(MediaBase):
-    article_id: UUID
-    commit_id: UUID
-    storage_path: str
-    bucket_name: str = "media-files"
-    object_key: str
-    public_url: Optional[str] = None
-
-class MediaUpdate(BaseModel):
-    original_filename: Optional[str] = None
     public_url: Optional[str] = None
 
 class MediaResponse(MediaBase):
     model_config = ConfigDict(from_attributes=True)
     
     id: UUID
-    article_id: UUID
-    commit_id: UUID
     storage_path: str
-    bucket_name: str
-    object_key: str
-    public_url: Optional[str]
+    public_url: str
     uploaded_at: datetime
-    updated_at: Optional[datetime]
 
-class MediaUploadResponse(BaseModel):
-    """Ответ при загрузке файла"""
-    media: MediaResponse
-    download_url: str  # Временная ссылка для скачивания
+class MediaInfoResponse(MediaResponse):
+    articles: List[dict] = []
+    commits: List[dict] = []
+    is_orphaned: bool
+
+class MediaUploadResponse(MediaResponse):
+    message: str = "File uploaded successfully"
+
+class ArticleReference(BaseModel):
+    id: UUID
+    title: str
+
+class CommitReference(BaseModel):
+    id: UUID
+    message: str

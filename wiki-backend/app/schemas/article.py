@@ -47,8 +47,8 @@ class CommitBase(BaseModel):
 
 class CommitCreate(BaseModel):
     message: str
-    content: str  # Полное содержимое для нового коммита
-    branch_id: Optional[UUID] = None  # Если не указана, используется main ветка
+    content: str  
+    branch_id: Optional[UUID] = None  
 
 
 class CommitCreateInternal(CommitBase):

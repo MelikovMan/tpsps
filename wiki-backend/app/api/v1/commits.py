@@ -14,11 +14,14 @@ from app.schemas.article import (
 from app.services.commit_service import CommitService
 from app.core.security import get_current_user
 from app.models.user import User
+from fastapi_cache.decorator import cache
+from app.core.config import settings
 
 router = APIRouter()
 
 
 @router.get("/article/{article_id}", response_model=List[CommitResponse])
+@cache(expire=settings.cache_expire)
 async def get_article_commits(
     article_id: UUID,
     skip: int = 0,
@@ -35,6 +38,7 @@ async def get_article_commits(
 
 
 @router.get("/branch/{branch_id}", response_model=List[CommitResponse])
+@cache(expire=settings.cache_expire)
 async def get_branch_commits(
     branch_id: UUID,
     skip: int = 0,
@@ -73,6 +77,7 @@ async def create_commit(
 
 
 @router.get("/{commit_id}", response_model=CommitResponse)
+@cache(expire=settings.cache_expire)
 async def get_commit(
     commit_id: UUID,
     db: AsyncSession = Depends(get_db)
@@ -86,6 +91,7 @@ async def get_commit(
 
 
 @router.get("/{commit_id}/detailed", response_model=CommitResponseDetailed)
+@cache(expire=settings.cache_expire)
 async def get_commit_detailed(
     commit_id: UUID,
     db: AsyncSession = Depends(get_db)
@@ -111,6 +117,7 @@ async def get_commit_detailed(
 
 
 @router.get("/{commit_id}/diff", response_model=DiffResponse)
+@cache(expire=settings.cache_expire)
 async def get_commit_diff(
     commit_id: UUID,
     db: AsyncSession = Depends(get_db)
@@ -124,6 +131,7 @@ async def get_commit_diff(
 
 
 @router.get("/{commit_id}/content")
+@cache(expire=settings.cache_expire)
 async def get_commit_content(
     commit_id: UUID,
     db: AsyncSession = Depends(get_db)

@@ -26,6 +26,7 @@ const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 
 const CommitsHistoryPage = lazy(() => import('../pages/CommitHistoryPage'));
 const BranchesPage = lazy(() => import('../pages/BranchesPage'));
+const MediaUploadPage = lazy(() => import('../pages/MediaUploadPage'));
 
 
 export default function Router() {
@@ -78,7 +79,7 @@ export default function Router() {
             </RequireAuth>
           } />
           
-          <Route path="articles/:id/edit" element={
+          <Route path="articles/:articleId/edit" element={
             <RequireAuth requiredPermissions={['can_edit']}>
               <ArticleEditPage />
             </RequireAuth>
@@ -95,13 +96,24 @@ export default function Router() {
               <UserListPage />
             </RequireAuth>
           } />
-          
+          <Route path="admin/*" element={
+            <RequireAuth requiredPermissions={['can_delete']}>
+              <AdminPage />
+            </RequireAuth>
+          } />
           <Route path="admin" element={
             <RequireAuth requiredPermissions={['can_delete']}>
               <AdminPage />
             </RequireAuth>
           } />
+            <Route path="media/upload" element={
+              <RequireAuth requiredPermissions={['can_edit']}>
+                <MediaUploadPage />
+              </RequireAuth>
+            }/>
         </Route>
+
+        
         
         {/* Отдельные страницы без AppShell */}
         <Route path="/login" element={<LoginPage />} />

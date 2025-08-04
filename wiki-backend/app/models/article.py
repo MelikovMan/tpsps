@@ -5,7 +5,7 @@ from sqlalchemy.sql import func
 import uuid
 
 from app.core.database import Base
-
+from app.models.media import article_media_association, commit_media_association
 class Article(Base):
     __tablename__ = "articles"
     __table_args__ = (
@@ -27,7 +27,11 @@ class Article(Base):
     branches = relationship("Branch", back_populates="article")
     categories = relationship("ArticleCategory", back_populates="article")
     tags = relationship("Tag", back_populates="article")
-    media = relationship("Media", back_populates="article")
+    media = relationship(
+        "Media", 
+        secondary=article_media_association,
+        back_populates="articles"
+    )
     comments = relationship("Comment", back_populates="article")
 
 class Commit(Base):
@@ -53,7 +57,11 @@ class Commit(Base):
                           primaryjoin="Commit.id == CommitParent.commit_id",
                           back_populates="commit")
     moderations = relationship("Moderation", back_populates="commit")
-    media = relationship("Media", back_populates="commit")
+    media = relationship(
+        "Media", 
+        secondary=commit_media_association,
+        back_populates="commits"
+    )
     branches = relationship("Branch", back_populates="head_commit")
     text = relationship("ArticleFull",back_populates="commit_fulls")
 

@@ -15,11 +15,14 @@ from app.schemas.article import (
 from app.services.branch_service import BranchService
 from app.core.security import get_current_user, get_current_user_optional
 from app.models.user import User
+from fastapi_cache.decorator import cache
+from app.core.config import settings
 
 router = APIRouter()
 
 
 @router.get("/article/{article_id}", response_model=List[BranchResponse])
+@cache(expire=settings.cache_expire)
 async def get_article_branches(
     article_id: UUID,
     include_private: bool = Query(False, description="Include private branches (only for creators)"),
@@ -76,6 +79,7 @@ async def create_branch_from_commit(
 
 
 @router.get("/{branch_id}", response_model=BranchResponse)
+@cache(expire=settings.cache_expire)
 async def get_branch(
     branch_id: UUID,
     current_user: Optional[User] = Depends(get_current_user_optional),
@@ -115,6 +119,7 @@ async def update_branch(
 
 
 @router.get("/article/{article_id}/by-name/{branch_name}", response_model=BranchResponse)
+@cache(expire=settings.cache_expire)
 async def get_branch_by_name(
     article_id: UUID,
     branch_name: str,
@@ -136,6 +141,7 @@ async def get_branch_by_name(
 
 
 @router.get("/article/{article_id}/by-commit/{commit_id}", response_model=BranchResponse)
+@cache(expire=settings.cache_expire)
 async def get_branch_by_head_commit(
     article_id: UUID,
     commit_id: UUID,
@@ -198,6 +204,7 @@ async def merge_branch(
 
 
 @router.get("/{branch_id}/commits-count")
+@cache(expire=settings.cache_expire)
 async def get_branch_commits_count(
     branch_id: UUID,
     current_user: Optional[User] = Depends(get_current_user_optional),
