@@ -19,8 +19,7 @@ import { IconCheck, IconX, IconDeviceFloppy, IconEye } from '@tabler/icons-react
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
 import { useCreateArticle } from '../api/articles';
 import TurndownService from 'turndown';
-import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
-import { marked } from 'marked';
+import { gfm as turndownGfm } from '@truto/turndown-plugin-gfm';
 interface ArticleFormData {
   title: string;
   status: string;

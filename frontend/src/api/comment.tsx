@@ -66,7 +66,7 @@ export const useDeleteComment = () => {
       await apiClient.delete(`/comments/${commentId}`);
       return commentId;
     },
-    onSuccess: (_, commentId) => {
+    onSuccess: (_,) => {
       // Обновляем все кэши комментариев
       queryClient.invalidateQueries({ 
         queryKey: ['comments'] 

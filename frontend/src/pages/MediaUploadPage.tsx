@@ -73,7 +73,7 @@ export default function MediaUploadPage() {
       let uploadedCount = 0;
       
       for (const previewFile of files) {
-        const result = await uploadMedia(previewFile.file);
+        await uploadMedia(previewFile.file);
         uploadedCount++;
         setProgress(Math.round((uploadedCount / totalFiles) * 100));
         

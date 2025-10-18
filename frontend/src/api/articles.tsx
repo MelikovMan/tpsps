@@ -1,7 +1,7 @@
 // src/api/articles.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from './client';
-import { type ArticleCreate, type ArticleEditCommit, type ArticleFullResponse, type ArticleResponse, type ArticleUpdate, type BranchCreate, type BranchCreateFromCommit, type BranchResponse, type CommitCreate, type CommitResponse, type CommitResponseDetailed, type DiffResponse, type MergeBranchRequest } from './article';
+import { type ArticleCreate, type ArticleEditCommit, type ArticleFullResponse, type ArticleResponse, type BranchCreate, type BranchCreateFromCommit, type BranchResponse, type CommitCreate, type CommitResponse, type CommitResponseDetailed, type DiffResponse, type MergeBranchRequest } from './article';
 
 interface ArticlesQueryParams {
   skip?: number;

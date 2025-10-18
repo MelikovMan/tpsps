@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:23-alpine AS build
+FROM node:alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -9,6 +9,6 @@ RUN npm run build
 # Stage 2: Serve
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 3000
-CMD ["nginx", "-g", "daemon off;"]
+COPY nginx.conf.template /etc/nginx/conf.d/default.template
+ENV PORT=8080
+CMD sh -c "envsubst \"`env | awk -F = '{printf \" \\\\$%s\", $1}'`\" < /etc/nginx/conf.d/default.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"

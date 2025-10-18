@@ -27,7 +27,6 @@ import { notifications } from '@mantine/notifications';
 import { useAuth } from '../context/AuthContext';
 import { useArticleComments, useCreateComment, useUpdateComment, useDeleteComment } from '../api/comment.tsx';
 import { type CommentResponse } from '../api/comment.ts';
-import { useUsers } from '../api/users.tsx';
 
 interface CommentsSectionProps {
   articleId: string;
@@ -115,7 +114,7 @@ function ReplyForm({ articleId, parentCommentId, onCancel, onSuccess }: ReplyFor
 }
 
 // Отдельный комментарий
-function CommentItem({ comment, articleId, depth = 0, maxDepth = 3, usersMap }: CommentItemProps) {
+function CommentItem({ comment, articleId, depth = 0, maxDepth = 3 }: CommentItemProps) {
   const { user } = useAuth();
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -128,9 +127,9 @@ function CommentItem({ comment, articleId, depth = 0, maxDepth = 3, usersMap }: 
   const canReply = depth < maxDepth;
   
   // Получаем информацию о пользователе
-  const commentUser = usersMap?.[comment.user_id];
-  const displayName = commentUser?.full_name || commentUser?.username || `User ${comment.user_id.slice(0, 8)}`;
-  const avatarText = commentUser?.username?.slice(0, 2).toUpperCase() || comment.user_id.slice(0, 2).toUpperCase();
+  //const commentUser = usersMap?.[comment.user_id];
+  //const displayName = commentUser?.full_name || commentUser?.username || `User ${comment.user_id.slice(0, 8)}`;
+  //const avatarText = commentUser?.username?.slice(0, 2).toUpperCase() || comment.user_id.slice(0, 2).toUpperCase();
 
   const handleEdit = () => {
     if (!editContent.trim()) return;

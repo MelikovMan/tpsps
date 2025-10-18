@@ -40,7 +40,7 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
         Color,
         TextStyle,
       ],
-      content,
+      content: content ?? placeholder,
       onUpdate: ({ editor }) => {
         const html = editor.getHTML();
         onChange?.(html);

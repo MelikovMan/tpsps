@@ -37,6 +37,7 @@
     "@tiptap/pm": "^2.12.0",
     "@tiptap/react": "^2.12.0",
     "@tiptap/starter-kit": "^2.12.0",
+    "@truto/turndown-plugin-gfm": "^1.0.2",
     "@vitejs/plugin-react": "^4.5.0",
     "axios": "^1.9.0",
     "dayjs": "^1.11.13",

@@ -31,7 +31,6 @@ import {
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
 import { useArticle, useEditArticle, useArticleBranches } from '../api/articles';
 import TurndownService from 'turndown';
-import MarkdownRenderer, { MemoizedMarkdown } from '../components/MarkdownRenderer';
 //import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
 import { marked } from 'marked';
 interface ArticleEditFormData {
