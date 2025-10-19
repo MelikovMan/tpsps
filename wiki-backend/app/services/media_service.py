@@ -2,14 +2,15 @@ from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, UploadFile
 
 from app.models.media import Media
 from app.models.article import Article, Commit
 from app.schemas.media import MediaResponse, MediaInfoResponse
-
+from app.core.yandex_storage import yandex_storage  # Changed from minio_client
+from app.core.config import settings
 class MediaService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -19,9 +20,13 @@ class MediaService:
         file: UploadFile, 
         article_id: UUID, 
         commit_id: UUID,
-        bucket_name: str = "media-files"
+        bucket_name: str|None = None
     ) -> Media:
-        # Проверка существования статьи и коммита
+        # Use default bucket if not specified
+        if bucket_name is None:
+            bucket_name = settings.YANDEX_STORAGE_BUCKET
+            
+        # Check if article and commit exist
         article = await self.db.get(Article, article_id)
         commit = await self.db.get(Commit, commit_id)
         
@@ -31,27 +36,42 @@ class MediaService:
                 detail="Article or Commit not found"
             )
 
-        # Генерация уникального ключа
+        # Generate unique object key
         file_extension = file.filename.split('.')[-1] if '.' in file.filename else ''
         object_key = f"uploads/{uuid4()}.{file_extension}"
         
-        # Заглушка для загрузки в MinIO
-        # Реальная реализация:
-        # await storage_service.upload_file(file, bucket_name, object_key)
+        # Read file content
+        file_content = await file.read()
+        file_size = len(file_content)
         
-        # Создание объекта Media
+        # Upload to Yandex Object Storage
+        try:
+            yandex_storage.upload_file(
+                bucket_name=bucket_name,
+                object_name=object_key,
+                file_data=file_content,
+                content_type=file.content_type or "application/octet-stream"
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to upload file to storage: {str(e)}"
+            )
+        
+        # Create Media object with Yandex Storage URL
         media = Media(
             original_filename=file.filename,
             storage_path=f"{bucket_name}/{object_key}",
             bucket_name=bucket_name,
             object_key=object_key,
-            mime_type=file.content_type,
-            file_size=0,  # Заменить на реальный размер после загрузки
-            public_url=f"http://minio:9000/{bucket_name}/{object_key}",
+            mime_type=file.content_type or "application/octet-stream",
+            file_size=file_size,
+            # Use Yandex Storage public URL format
+            public_url=yandex_storage.get_public_url(bucket_name, object_key),
             uploaded_at=datetime.now(timezone.utc)
         )
         
-        # Привязка к статье и коммиту
+        # Link to article and commit
         media.articles.append(article)
         media.commits.append(commit)
         
@@ -116,29 +136,35 @@ class MediaService:
         media_id: UUID, 
         expires_in: int = 3600
     ) -> str:
-        # Заглушка для генерации URL в MinIO
-        # Реальная реализация:
-        # return storage_service.get_presigned_url(
-        #   media.bucket_name, 
-        #   media.object_key,
-        #   expires_in=expires_in
-        # )
+        """Get presigned download URL from Yandex Storage"""
         media = await self.get_media_by_id(media_id)
         if not media:
             raise HTTPException(status_code=404, detail="Media not found")
-        return f"{media.public_url}?token=temp_{expires_in}"
+        
+        try:
+            return yandex_storage.get_presigned_url(
+                media.bucket_name, 
+                media.object_key,
+                expires_in_seconds=expires_in
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to generate download URL: {str(e)}"
+            )
+
 
     async def delete_media(self, media_id: UUID) -> bool:
         media = await self.db.get(Media, media_id)
         if not media:
             return False
         
-        # Заглушка для удаления из MinIO
-        # Реальная реализация:
-        # await storage_service.delete_file(
-        #   media.bucket_name, 
-        #   media.object_key
-        # )
+        # Delete from Yandex Storage
+        try:
+            yandex_storage.delete_file(media.bucket_name, media.object_key)
+        except Exception as e:
+            # Log error but continue with database deletion
+            logger.error(f"Failed to delete file from storage: {e}")
         
         await self.db.delete(media)
         await self.db.commit()

@@ -32,13 +32,12 @@ class Settings(BaseSettings):
     upload_folder: str = Field("./uploads", alias="UPLOAD_FOLDER")
     max_file_size: int = Field(10485760, alias="MAX_FILE_SIZE")
 
-    ## MinIO Configuration
-    MINIO_ENDPOINT: str = Field("localhost:9000", alias="MINIO_ENDPOINT")
-    MINIO_ACCESS_KEY: str = Field("minioadmin", alias="MINIO_ACCESS_KEY")
-    MINIO_SECRET_KEY: str = Field("minioadmin", alias="MINIO_SECRET_KEY")
-    MINIO_SECURE: bool = Field(False, alias="MINIO_SECURE")
-    MINIO_DEFAULT_BUCKET: str = Field("media-files", alias="MINIO_DEFAULT_BUCKET")
-    minio_public_url: str = Field("http://localhost:9000", alias="MINIO_PUBLIC_URL")
+    ## Ya_storage_config
+    YANDEX_STORAGE_ENDPOINT: str = Field("https://storage.yandexcloud.net", alias="YANDEX_STORAGE_ENDPOINT")
+    YANDEX_STORAGE_ACCESS_KEY: str = Field(..., alias="YANDEX_STORAGE_ACCESS_KEY")
+    YANDEX_STORAGE_SECRET_KEY: str = Field(..., alias="YANDEX_STORAGE_SECRET_KEY")
+    YANDEX_STORAGE_BUCKET: str = Field("media-files", alias="YANDEX_STORAGE_BUCKET")
+    YANDEX_STORAGE_REGION: str = Field("ru-central1-d", alias="YANDEX_STORAGE_REGION")
 
 
     class Config:
