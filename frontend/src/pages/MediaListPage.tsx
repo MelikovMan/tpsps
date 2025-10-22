@@ -21,92 +21,64 @@ import {
   Center
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import {
-  IconSearch,
-  IconDownload,
-  IconInfoCircle,
-  IconFile,
-  IconPhoto,
-  IconVideo,
-  IconMusic
-} from '@tabler/icons-react';
+import { IconSearch, IconDownload, IconInfoCircle, IconTrash } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
-import { useQuery } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 
-interface MediaFile {
-  id: string;
-  original_filename: string;
-  mime_type: string;
-  file_size: number;
-  public_url: string;
-  uploaded_at: string;
-  storage_path: string;
-  bucket_name: string;
-  object_key: string;
-}
-
-interface MediaResponse {
-  data: MediaFile[];
-  total: number;
-  page: number;
-  pages: number;
-}
+import {
+  useMediaList,
+  useDeleteMedia,
+  useMediaDownload,
+  getFileIcon,
+  getFileType,
+  formatFileSize,
+  formatDate
+} from '../api/media';
 
 const ITEMS_PER_PAGE = 12;
 
 export default function MediaListPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, permissions } = useAuth();
   const [opened, { open, close }] = useDisclosure(false);
-  const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
+  const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
+  const [selectedMedia, setSelectedMedia] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: mediaData, isLoading, error } = useQuery({
-    queryKey: ['media', currentPage, searchTerm, typeFilter],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: ITEMS_PER_PAGE.toString(),
-        ...(searchTerm && { search: searchTerm }),
-        ...(typeFilter !== 'all' && { type: typeFilter })
-      });
-
-      const response = await fetch(`/api/media?${params}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch media files');
-      }
-      return response.json() as Promise<MediaResponse>;
-    },
-    enabled: isAuthenticated,
+  const { data: mediaData, isLoading, error } = useMediaList({
+    page: currentPage,
+    limit: ITEMS_PER_PAGE,
+    search: searchTerm,
+    type: typeFilter
   });
 
-  const handleMediaClick = (media: MediaFile) => {
+  const deleteMediaMutation = useDeleteMedia();
+  const downloadMediaMutation = useMediaDownload();
+
+  const handleMediaClick = (media: any) => {
     setSelectedMedia(media);
     open();
   };
 
   const handleDownload = async (mediaId: string, filename: string) => {
     try {
-      const response = await fetch(`/api/media/${mediaId}/download`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        notifications.show({
-          title: 'Download started',
-          message: `Downloading ${filename}`,
-          color: 'green',
-        });
-      }
+      const downloadUrl = await downloadMediaMutation.mutateAsync({ mediaId });
+      
+      // Create a temporary anchor element to trigger download
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+      
+      notifications.show({
+        title: 'Download started',
+        message: `Downloading ${filename}`,
+        color: 'green',
+      });
     } catch (error) {
       notifications.show({
         title: 'Download failed',
@@ -116,39 +88,28 @@ export default function MediaListPage() {
     }
   };
 
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return <IconPhoto size={20} />;
-    if (mimeType.startsWith('video/')) return <IconVideo size={20} />;
-    if (mimeType.startsWith('audio/')) return <IconMusic size={20} />;
-    return <IconFile size={20} />;
+  const handleDelete = async (mediaId: string) => {
+    try {
+      await deleteMediaMutation.mutateAsync(mediaId);
+      notifications.show({
+        title: 'Media deleted',
+        message: 'Media file has been deleted successfully',
+        color: 'green',
+      });
+      closeDeleteModal();
+      if (selectedMedia?.id === mediaId) {
+        close();
+      }
+    } catch (error) {
+      notifications.show({
+        title: 'Deletion failed',
+        message: 'Failed to delete media file',
+        color: 'red',
+      });
+    }
   };
 
-  const getFileType = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return 'Image';
-    if (mimeType.startsWith('video/')) return 'Video';
-    if (mimeType.startsWith('audio/')) return 'Audio';
-    if (mimeType.startsWith('application/pdf')) return 'PDF';
-    if (mimeType.startsWith('text/')) return 'Text';
-    return 'Document';
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const canDelete = permissions?.can_delete;
 
   if (!isAuthenticated) {
     return (
@@ -239,7 +200,7 @@ export default function MediaListPage() {
                       />
                     ) : (
                       <Center style={{ height: 160, backgroundColor: 'var(--mantine-color-gray-0)' }}>
-                        {getFileIcon(media.mime_type)}
+                        <Text size="xl">{getFileIcon(media.mime_type)}</Text>
                         <Text size="sm" ml="xs" c="dimmed">
                           {getFileType(media.mime_type)}
                         </Text>
@@ -290,6 +251,21 @@ export default function MediaListPage() {
                             <IconInfoCircle size={16} />
                           </ActionIcon>
                         </Tooltip>
+                        {canDelete && (
+                          <Tooltip label="Delete">
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedMedia(media);
+                                openDeleteModal();
+                              }}
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
                       </Group>
                     </Group>
                   </Stack>
@@ -298,12 +274,12 @@ export default function MediaListPage() {
             ))}
           </Grid>
 
-          {mediaData && mediaData.pages > 1 && (
+          {mediaData && mediaData.total > ITEMS_PER_PAGE && (
             <Center mt="xl">
               <Pagination
                 value={currentPage}
                 onChange={setCurrentPage}
-                total={mediaData.pages}
+                total={Math.ceil(mediaData.total / ITEMS_PER_PAGE)}
                 siblings={1}
                 boundaries={1}
               />
@@ -312,6 +288,7 @@ export default function MediaListPage() {
         </div>
       </Stack>
 
+      {/* Media Details Modal */}
       <Modal
         opened={opened}
         onClose={close}
@@ -330,7 +307,7 @@ export default function MediaListPage() {
             ) : (
               <Center style={{ height: 200, backgroundColor: 'var(--mantine-color-gray-0)' }}>
                 <Group>
-                  {getFileIcon(selectedMedia.mime_type)}
+                  <Text size="xl">{getFileIcon(selectedMedia.mime_type)}</Text>
                   <Text size="xl">{getFileType(selectedMedia.mime_type)}</Text>
                 </Group>
               </Center>
@@ -368,15 +345,56 @@ export default function MediaListPage() {
                 variant="light"
                 leftSection={<IconDownload size={16} />}
                 onClick={() => handleDownload(selectedMedia.id, selectedMedia.original_filename)}
+                loading={downloadMediaMutation.isPending}
               >
                 Download
               </Button>
+              {canDelete && (
+                <Button
+                  variant="outline"
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                  onClick={() => {
+                    close();
+                    openDeleteModal();
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
               <Button variant="outline" onClick={close}>
                 Close
               </Button>
             </Group>
           </Stack>
         )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={deleteModalOpened}
+        onClose={closeDeleteModal}
+        title="Delete Media"
+        size="sm"
+        centered
+      >
+        <Stack>
+          <Text>
+            Are you sure you want to delete "{selectedMedia?.original_filename}"? This action cannot be undone.
+          </Text>
+          <Group justify="right">
+            <Button variant="outline" onClick={closeDeleteModal}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              loading={deleteMediaMutation.isPending}
+              onClick={() => selectedMedia && handleDelete(selectedMedia.id)}
+            >
+              Delete
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
     </Container>
   );

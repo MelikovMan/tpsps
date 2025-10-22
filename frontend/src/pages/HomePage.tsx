@@ -29,6 +29,7 @@ export default function MainPage() {
     { path: '/moderation', label: 'Модерация', icon: <IconShield size="1rem" />, required: ['can_moderate'] },
     { path: '/admin', label: 'Администрирование', icon: <IconSettings size="1rem" />, required: ['can_delete'] },
     { path: '/media/upload', label: 'Загрузка медиа', icon: <IconPhoto size="1rem" />, required: ['can_edit']},
+    { path: '/media', label: 'Медиа', icon: <IconPhoto size="1rem" />, required: ['can_edit'] },
   ];
 
   // Проверка активной ссылки
