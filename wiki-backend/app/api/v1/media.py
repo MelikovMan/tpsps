@@ -74,7 +74,7 @@ async def detach_media_from_article(
         "article_id": article_id
     }
 
-@router.get("/", response_model=List[MediaResponse])
+@router.get("/", response_model=List[MediaListResponse])
 @cache(expire=settings.cache_expire)
 async def get_media_files(
     skip: int = Query(0, ge=0),
