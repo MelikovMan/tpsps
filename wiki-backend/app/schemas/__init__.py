@@ -35,7 +35,7 @@ from .category import (
 
 # Comment schemas
 from .comment import (
-    CommentBase, CommentCreate, CommentUpdate, CommentResponse
+    CommentBase, CommentCreate, CommentUpdate, CommentResponse, CommentCreateResponse
 )
 
 # Media schemas
@@ -90,7 +90,7 @@ __all__ = [
     "CategoryBase", "CategoryCreate", "CategoryUpdate", "CategoryResponse",
     
     # Comment schemas
-    "CommentBase", "CommentCreate", "CommentUpdate", "CommentResponse",
+    "CommentBase", "CommentCreate", "CommentUpdate", "CommentResponse", "CommentCreateResponse",
     
     # Media schemas
     "MediaBase", "MediaCreate", "MediaUpdate", "MediaResponse", "MediaUploadResponse",
