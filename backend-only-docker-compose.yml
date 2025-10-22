@@ -30,7 +30,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PWD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./wiki-backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d wiki_db"]
     networks:
