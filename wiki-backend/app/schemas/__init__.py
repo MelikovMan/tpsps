@@ -40,7 +40,7 @@ from .comment import (
 
 # Media schemas
 from .media import (
-    MediaBase, MediaCreate, MediaResponse, MediaUploadResponse
+    MediaBase, MediaCreate, MediaResponse, MediaUploadResponse, MediaFileType, MediaListResponse
 )
 
 # Moderation schemas
@@ -93,7 +93,7 @@ __all__ = [
     "CommentBase", "CommentCreate", "CommentUpdate", "CommentResponse", "CommentCreateResponse",
     
     # Media schemas
-    "MediaBase", "MediaCreate", "MediaUpdate", "MediaResponse", "MediaUploadResponse",
+    "MediaBase", "MediaCreate", "MediaUpdate", "MediaResponse", "MediaUploadResponse", "MediaFileType", "MediaListResponse",
     
     # Moderation schemas
     "ModerationBase", "ModerationCreate", "ModerationUpdate", "ModerationResponse",
