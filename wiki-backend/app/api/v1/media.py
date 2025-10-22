@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,8 +18,8 @@ router = APIRouter()
 
 @router.post("/upload", response_model=MediaUploadResponse)
 async def upload_media_file(
-    article_id: UUID,
-    commit_id: UUID,
+    article_id: Optional[UUID] = Query(None),
+    commit_id: Optional[UUID] = Query(None),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -30,6 +30,42 @@ async def upload_media_file(
         **media.__dict__,
         message="File uploaded successfully"
     )
+
+
+
+@router.post("/{media_id}/attach")
+async def attach_media_to_article(
+    media_id: UUID,
+    article_id: UUID = Query(...),
+    commit_id: Optional[UUID] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Attach existing media to an article and optionally a commit"""
+    service = MediaService(db)
+    media = await service.attach_media_to_article(media_id, article_id, commit_id)
+    return {
+        "message": "Media attached successfully",
+        "media_id": media.id,
+        "article_id": article_id,
+        "commit_id": commit_id
+    }
+
+@router.post("/{media_id}/detach")
+async def detach_media_from_article(
+    media_id: UUID,
+    article_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Detach media from an article"""
+    service = MediaService(db)
+    media = await service.detach_media_from_article(media_id, article_id)
+    return {
+        "message": "Media detached successfully",
+        "media_id": media.id,
+        "article_id": article_id
+    }
 
 @router.get("/", response_model=List[MediaResponse])
 async def get_media_files(

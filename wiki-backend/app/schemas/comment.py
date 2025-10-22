@@ -25,3 +25,13 @@ class CommentResponse(CommentBase):
     replies: List["CommentResponse"] = []
 
 CommentResponse.model_rebuild()
+
+class CommentCreateResponse(CommentBase):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: UUID
+    article_id: UUID
+    user_id: UUID
+    created_at: datetime
+    reply_to_id: Optional[UUID] = None
+    # Remove replies from create response

@@ -2,6 +2,7 @@ from fastapi import FastAPI, logger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from app.core.database import AsyncSessionLocal
 async def check_database_connection():
     try:
@@ -20,7 +21,7 @@ app = FastAPI(
     title="Wiki API",
     description="FastAPI Wiki Backend",
     version="1.0.0",
-    debug=settings.debug
+    debug=settings.debug,
 )
 
 # CORS
@@ -31,6 +32,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(HTTPSRedirectMiddleware)
 @app.on_event("startup")
 async def startup_event():
     await init_redis_cache()

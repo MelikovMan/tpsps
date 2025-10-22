@@ -18,24 +18,26 @@ class MediaService:
     async def upload_file(
         self, 
         file: UploadFile, 
-        article_id: UUID, 
-        commit_id: UUID,
+        article_id: Optional[UUID] = None,
+        commit_id: Optional[UUID] = None,
         bucket_name: str|None = None
     ) -> Media:
         # Use default bucket if not specified
         if bucket_name is None:
             bucket_name = settings.YANDEX_STORAGE_BUCKET
             
+        article = None
+        commit = None
         # Check if article and commit exist
-        article = await self.db.get(Article, article_id)
-        commit = await self.db.get(Commit, commit_id)
+        if article_id:
+            article = await self.db.get(Article, article_id)
+            if not article:
+                raise HTTPException(status_code=404, detail="Article not found")
+        if commit_id:
+            commit = await self.db.get(Commit, commit_id)
+            if not commit:
+                raise HTTPException(status_code=404, detail="Commit not found")
         
-        if not article or not commit:
-            raise HTTPException(
-                status_code=404, 
-                detail="Article or Commit not found"
-            )
-
         # Generate unique object key
         file_extension = file.filename.split('.')[-1] if '.' in file.filename else ''
         object_key = f"uploads/{uuid4()}.{file_extension}"
@@ -72,8 +74,11 @@ class MediaService:
         )
         
         # Link to article and commit
-        media.articles.append(article)
-        media.commits.append(commit)
+        if article:
+            media.articles.append(article)
+
+        if commit:
+            media.commits.append(commit)
         
         self.db.add(media)
         await self.db.commit()
@@ -88,6 +93,77 @@ class MediaService:
         )
         return result.scalars().all()
 
+
+    async def attach_media_to_article(
+        self,
+        media_id: UUID,
+        article_id: UUID,
+        commit_id: Optional[UUID] = None
+    ) -> Media:
+        """Attach existing media to an article and optionally a commit"""
+        media = await self.db.get(
+            Media, 
+            media_id,
+            options=[selectinload(Media.articles), selectinload(Media.commits)]
+        )
+        if not media:
+            raise HTTPException(status_code=404, detail="Media not found")
+            
+        article = await self.db.get(Article, article_id)
+        if not article:
+            raise HTTPException(status_code=404, detail="Article not found")
+            
+        commit = None
+        if commit_id:
+            commit = await self.db.get(Commit, commit_id)
+            if not commit:
+                raise HTTPException(status_code=404, detail="Commit not found")
+        
+        # Attach to article
+        if article not in media.articles:
+            media.articles.append(article)
+            
+        # Attach to commit if provided
+        if commit and commit not in media.commits:
+            media.commits.append(commit)
+            
+        # Update orphaned status
+        media.is_orphaned = not (media.articles or media.commits)
+        
+        await self.db.commit()
+        await self.db.refresh(media)
+        return media
+    
+    async def detach_media_from_article(
+        self,
+        media_id: UUID,
+        article_id: UUID
+    ) -> Media:
+        """Detach media from an article"""
+        media = await self.db.get(
+            Media, 
+            media_id,
+            options=[selectinload(Media.articles), selectinload(Media.commits)]
+        )
+        if not media:
+            raise HTTPException(status_code=404, detail="Media not found")
+            
+        article = await self.db.get(Article, article_id)
+        if not article:
+            raise HTTPException(status_code=404, detail="Article not found")
+        
+        # Remove from article
+        if article in media.articles:
+            media.articles.remove(article)
+            
+        # Update orphaned status
+        media.is_orphaned = not (media.articles or media.commits)
+        
+        await self.db.commit()
+        await self.db.refresh(media)
+        return media
+    
+    
     async def get_media_by_id(self, media_id: UUID) -> Optional[Media]:
         return await self.db.get(Media, media_id)
 

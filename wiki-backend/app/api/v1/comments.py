@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.security import get_current_active_user, require_permission
 from app.models.user import User
 from app.models.comment import Comment
-from app.schemas.comment import CommentResponse, CommentCreate, CommentUpdate
+from app.schemas.comment import CommentCreateResponse, CommentResponse, CommentCreate, CommentUpdate
 from app.services.comment_service import CommentService
 router = APIRouter()
 
@@ -31,7 +31,7 @@ async def get_article_comments(
     
     return await comment_service.build_comment_tree(comments=list(comments))
 
-@router.post("/", response_model=CommentResponse)
+@router.post("/", response_model=CommentCreateResponse)
 async def create_comment(
     comment_data: CommentCreate,
     current_user: User = Depends(get_current_active_user),
@@ -48,7 +48,7 @@ async def create_comment(
     await db.commit()
     await db.refresh(comment)
     
-    return CommentResponse.model_validate(comment)
+    return CommentCreateResponse.model_validate(comment)
 
 @router.put("/{comment_id}", response_model=CommentResponse)
 async def update_comment(
