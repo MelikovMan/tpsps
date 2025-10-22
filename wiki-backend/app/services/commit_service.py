@@ -157,11 +157,16 @@ class CommitService:
         
         # Обновляем head ветки
         branch.head_commit_id = new_commit.id
+        full_text = await self.rebuild_content_at_commit(new_commit.id)
+
+        if not full_text:
+            raise ValueError("Couldn't build whole text")
         
+
         full_content = ArticleFull(
             article_id=article_id,
             commit_id=new_commit.id,
-            text = self.rebuild_content_at_commit(new_commit.id)
+            text = full_text
         )
         self.db.add(full_content)
 

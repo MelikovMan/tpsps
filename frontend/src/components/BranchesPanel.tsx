@@ -24,7 +24,7 @@ import {
   IconHistory,
   IconAlertCircle,
 } from '@tabler/icons-react';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery  } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
   useArticleBranches,
@@ -46,7 +46,7 @@ export default function BranchesPanel({ articleId }: BranchesPanelProps) {
   const [selectedBranch, setSelectedBranch] = useState<BranchResponse | null>(null);
   const [mergedBranch, setMergeBranch] = useState<BranchResponse | null>(null);
   const [createFromCommit, setCreateFromCommit] = useState<string | null>(null);
-
+  const isMobile = useMediaQuery('(max-width: 50em)');
   const { data: branches, isLoading } = useArticleBranches(articleId);
   const createBranch = useCreateBranch();
   const createBranchFromCommit = useCreateBranchFromCommit();
@@ -192,12 +192,16 @@ export default function BranchesPanel({ articleId }: BranchesPanelProps) {
           closeCreateModal();
           setCreateFromCommit(null);
         }}
+        centered // Add this
+        fullScreen={isMobile}
         title={createFromCommit ? "Создать ветку из коммита" : "Создать новую ветку"}
       >
+      {
         <CreateBranchForm
           onSubmit={handleCreateBranch}
           loading={createBranch.isPending || createBranchFromCommit.isPending}
         />
+      }
       </Modal>
 
       {/* Merge Branch Modal */}
@@ -205,7 +209,10 @@ export default function BranchesPanel({ articleId }: BranchesPanelProps) {
         opened={mergeModalOpened}
         onClose={closeMergeModal}
         title="Объединить ветки"
+        fullScreen={isMobile}
+        centered // Add this
       >
+      {
         <MergeBranchForm
           sourceBranch={selectedBranch}
           branches={branches || []}
@@ -213,6 +220,7 @@ export default function BranchesPanel({ articleId }: BranchesPanelProps) {
           onTargetChange={setMergeBranch}
           loading={mergeBranch.isPending}
         />
+      }
       </Modal>
     </>
   );

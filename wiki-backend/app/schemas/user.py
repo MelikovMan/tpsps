@@ -1,8 +1,10 @@
 # app/schemas/user.py
-from pydantic import BaseModel, EmailStr, ConfigDict, Field
-from typing import Optional, Dict, Any, List
+import json
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
+from typing import Optional, Dict, Any, List, Union
 from datetime import datetime
 from uuid import UUID
+
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -31,7 +33,18 @@ class RegisterResponse(UserResponse):
 class UserProfileBase(BaseModel):
     bio: Optional[str] = Field(None, max_length=1000)
     avatar_url: Optional[str] = Field(None, max_length=500)
-    social_links: Optional[Dict[str, str]] = Field(None, description="Социальные ссылки")
+    social_links: Optional[Union[Dict[str, Any], str]] = Field(None, description="Социальные ссылки")
+    
+    # Add validator to handle stringified JSON
+    @field_validator('social_links', mode='before')
+    @classmethod
+    def parse_social_links(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return {}
+        return v or {}
 
 class UserProfileCreate(UserProfileBase):
     pass

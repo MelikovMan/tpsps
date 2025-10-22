@@ -24,6 +24,8 @@ const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
 const ForbiddenPage = lazy(() => import('../pages/ForbiddenPage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 
+const MediaListPage = lazy(() => import('../pages/MediaListPage'));
+
 const CommitsHistoryPage = lazy(() => import('../pages/CommitHistoryPage'));
 const BranchesPage = lazy(() => import('../pages/BranchesPage'));
 const MediaUploadPage = lazy(() => import('../pages/MediaUploadPage'));
@@ -106,11 +108,16 @@ export default function Router() {
               <AdminPage />
             </RequireAuth>
           } />
-            <Route path="media/upload" element={
-              <RequireAuth requiredPermissions={['can_edit']}>
-                <MediaUploadPage />
-              </RequireAuth>
-            }/>
+          <Route path="media" element={
+            <RequireAuth requiredPermissions={['can_edit']}>
+              <MediaListPage />
+            </RequireAuth>
+}          />
+          <Route path="media/upload" element={
+            <RequireAuth requiredPermissions={['can_edit']}>
+              <MediaUploadPage />
+            </RequireAuth>
+          }/>
         </Route>
 
         
