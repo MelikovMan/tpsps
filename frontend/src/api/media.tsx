@@ -44,12 +44,13 @@ export const getMediaList = async (params: MediaListParams = {}): Promise<MediaL
   if (params.search) queryParams.append('search', params.search);
   if (params.type && params.type !== 'all') queryParams.append('type', params.type);
   
-  const response = await apiClient.get<MediaFile[]>(`/media?${queryParams}`);
+  const response = await apiClient.get<MediaListResponse>(`/media?${queryParams}`);
+  response.data.data
   
   // For now, we'll return a mock structure. In a real app, your backend should return pagination info.
   return {
-    data: response.data,
-    total: response.data.length // This should come from backend pagination headers
+    data: response.data.data,
+    total: response.data.total // This should come from backend pagination headers
   };
 };
 
