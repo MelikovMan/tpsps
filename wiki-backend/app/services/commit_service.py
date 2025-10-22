@@ -200,10 +200,10 @@ class CommitService:
         new_lines = new_content.splitlines(keepends=True)
         
         # Ensure proper line endings
-        if old_lines and not old_lines[-1].endswith('\n'):
-            old_lines[-1] += '\n\\ No newline at end of file\n'
-        if new_lines and not new_lines[-1].endswith('\n'):
-            new_lines[-1] += '\n\\ No newline at end of file\n'
+        #if old_lines and not old_lines[-1].endswith('\n'):
+         #   old_lines[-1] += '\n\\ No newline at end of file\n'
+        #if new_lines and not new_lines[-1].endswith('\n'):
+         #   new_lines[-1] += '\n\\ No newline at end of file\n'
         
         diff = difflib.unified_diff(
             old_lines,
