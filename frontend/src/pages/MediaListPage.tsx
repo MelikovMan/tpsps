@@ -1,5 +1,5 @@
 // MediaListPage.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Container,
   Title,
