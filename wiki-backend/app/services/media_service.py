@@ -2,15 +2,17 @@ from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, UploadFile
 
 from app.models.media import Media
 from app.models.article import Article, Commit
-from app.schemas.media import MediaResponse, MediaInfoResponse
+from app.schemas.media import MediaFileType, MediaResponse, MediaInfoResponse
 from app.core.yandex_storage import yandex_storage  # Changed from minio_client
 from app.core.config import settings
+from app.services.media_filter_strategy import MediaFilterStrategy
+
 class MediaService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -163,22 +165,51 @@ class MediaService:
         await self.db.refresh(media)
         return media
     
-    
+
     async def get_media_by_id(self, media_id: UUID) -> Optional[Media]:
         return await self.db.get(Media, media_id)
 
     async def get_all_media(
         self, 
         skip: int = 0, 
-        limit: int = 100
+        limit: int = 100,
+        search: Optional[str] = None,
+        file_type: Optional[MediaFileType] = None
     ) -> List[Media]:
-        result = await self.db.execute(
-            select(Media)
-            .offset(skip)
-            .limit(limit)
-        )
+        query = select(Media)
+        if search:
+            query = query.where(Media.original_filename.ilike(f"%{search}%"))
+    
+    # Apply type filter if provided and not 'all'
+        if file_type and file_type != MediaFileType.ALL:
+            type_filter = MediaFilterStrategy.get_filter_condition(file_type)
+            if type_filter:
+                query = query.where(type_filter)
+    
+        query = query.offset(skip).limit(limit).order_by(Media.uploaded_at.desc())
+    
+        result = await self.db.execute(query)
         return result.scalars().all()
 
+
+    async def get_media_count(
+        self, 
+        search: Optional[str] = None,
+        file_type: Optional[MediaFileType] = None
+    ) -> int:
+        query = select(func.count(Media.id))
+    
+        if search:
+            query = query.where(Media.original_filename.ilike(f"%{search}%"))
+    
+        if file_type and file_type != MediaFileType.ALL:
+            type_filter = MediaFilterStrategy.get_filter_condition(file_type)
+            if type_filter:
+                query = query.where(type_filter)
+    
+        result = await self.db.execute(query)
+        return result.scalar()
+    
     async def get_file_info(self, media_id: UUID) -> MediaInfoResponse:
         media = await self.db.get(
             Media, 

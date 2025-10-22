@@ -2,6 +2,15 @@ from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
 from typing import List, Optional
+from enum import Enum
+
+class MediaFileType(str, Enum):
+    ALL = "all"
+    IMAGE = "image"
+    VIDEO = "video"
+    AUDIO = "audio"
+    PDF = "pdf"
+    TEXT = "text"
 
 class MediaBase(BaseModel):
     original_filename: str
@@ -20,6 +29,11 @@ class MediaResponse(MediaBase):
     storage_path: str
     public_url: str
     uploaded_at: datetime
+
+class MediaListResponse(BaseModel):
+    data: List[MediaResponse]
+    total: int
+
 
 class MediaInfoResponse(MediaResponse):
     articles: List[dict] = []

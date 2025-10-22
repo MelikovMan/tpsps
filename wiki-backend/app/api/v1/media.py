@@ -4,8 +4,14 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
+from fastapi_cache.decorator import cache
+from app.core.config import settings
+
+
 from app.core.database import get_db
 from app.schemas.media import (
+    MediaFileType,
+    MediaListResponse,
     MediaResponse,
     MediaUploadResponse,
     MediaInfoResponse
@@ -13,6 +19,7 @@ from app.schemas.media import (
 from app.services.media_service import MediaService
 from app.core.security import get_current_user
 from app.models.user import User
+from app.services.media_filter_strategy import MediaFilterStrategy 
 
 router = APIRouter()
 
@@ -68,15 +75,23 @@ async def detach_media_from_article(
     }
 
 @router.get("/", response_model=List[MediaResponse])
+@cache(expire=settings.cache_expire)
 async def get_media_files(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    db: AsyncSession = Depends(get_db)
+    search: Optional[str] = Query(None),
+        type: MediaFileType = Query(MediaFileType.ALL, description=f"Filter by file type. Available types: {MediaFilterStrategy.get_available_types()}"),
+    db: AsyncSession = Depends(get_db),
+
 ):
     service = MediaService(db)
-    media_files = await service.get_all_media(skip, limit)
-    return media_files
-
+    media_files = await service.get_all_media(skip, limit, search, type)
+    total_count = await service.get_media_count(search, type)
+    
+    return MediaListResponse(
+        data=media_files,
+        total=total_count
+    )
 @router.get("/article/{article_id}", response_model=List[MediaResponse])
 async def get_article_media(
     article_id: UUID,
