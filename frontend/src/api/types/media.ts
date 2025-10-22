@@ -1,3 +1,4 @@
+
 // types/media.ts
 export interface MediaResponse {
   id: string;
@@ -55,14 +56,26 @@ export interface MediaDownloadResponse {
   expires_in: number;
 }
 
-// Types for API parameters
+export const MediaFileType = {
+  ALL: 'all',
+  IMAGE: 'image',
+  VIDEO: 'video',
+  AUDIO: 'audio',
+  PDF: 'pdf',
+  TEXT: 'text'
+} as const;
+
+export type MediaFileType = typeof MediaFileType[keyof typeof MediaFileType];
+
+// Update MediaListParams to use the enum
 export interface MediaListParams {
   page?: number;
   skip?: number;
   limit?: number;
   search?: string;
-  type?: string;
+  type?: MediaFileType | string; // Allow string for backward compatibility
 }
+
 
 export interface UploadMediaParams {
   file: File;

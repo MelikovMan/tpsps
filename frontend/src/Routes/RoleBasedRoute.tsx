@@ -25,7 +25,7 @@ export function RoleBasedRoute({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   // Проверка разрешений

@@ -32,7 +32,7 @@ export default function LoginPage() {
     if (isAuthenticated) {
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [isAuthenticated, from]);
 
   return (
     <motion.div
