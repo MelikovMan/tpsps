@@ -214,7 +214,7 @@ class CommitService:
             n=3  # Context lines
         )
         
-        return "".join(diff)
+        return "\n".join(diff)
 
     async def get_commit_diff(self, commit_id: UUID) -> Optional[DiffResponse]:
         """Get the diff for a specific commit"""
