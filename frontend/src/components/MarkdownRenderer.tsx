@@ -55,6 +55,57 @@ export default function MarkdownRenderer({
         />
       );
     },
+    video({ src, ...props }: any) {
+      let videoUrl = src;
+    
+      // Handle media bucket video URLs
+      if (src && src.startsWith('/media/')) {
+        const mediaId = src.split('/')[2];
+        videoUrl = `${import.meta.env.VITE_API_URL}/media/${mediaId}/url`;
+      }
+    
+      return (
+        <video
+          controls
+          src={videoUrl}
+          style={{
+            maxWidth: '100%',
+            borderRadius: '4px',
+            margin: '10px 0',
+            maxHeight: '400px'
+          }}
+          {...props}
+        >
+          Ваш браузер не поддерживает видео тег.
+        </video>
+      );
+  },
+  
+  // Add audio element support
+  audio({ src, ...props }: any) {
+    let audioUrl = src;
+    
+    // Handle media bucket audio URLs
+    if (src && src.startsWith('/media/')) {
+      const mediaId = src.split('/')[2];
+      audioUrl = `${import.meta.env.VITE_API_URL}/media/${mediaId}/url`;
+    }
+    
+    return (
+      <audio
+        controls
+        src={audioUrl}
+        style={{
+          width: '100%',
+          maxWidth: '400px',
+          margin: '10px 0'
+        }}
+        {...props}
+      >
+        Ваш браузер не поддерживает аудио тег.
+      </audio>
+    );
+  },
     
     // Обработчик для ссылок
     a({ href, children, ...props }: any) {
