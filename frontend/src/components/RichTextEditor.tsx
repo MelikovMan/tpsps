@@ -9,7 +9,7 @@ import SubScript from '@tiptap/extension-subscript';
 import { Color } from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import ImageExtension from '@tiptap/extension-image';
-import { Box, Button, Group, Modal, Stack, Text, Image } from '@mantine/core';
+import { Box, Button, Group, Modal, Stack, Text, Image, Tooltip, ActionIcon } from '@mantine/core';
 import { forwardRef, useImperativeHandle, useEffect, useState } from 'react';
 import { useMediaList } from '../api/media';
 import { IconPhoto, IconVideo, IconMusic } from '@tabler/icons-react';
@@ -224,6 +224,20 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
       
       setMediaModalOpened(false);
     };
+    function MediaControl({ onClick }: { onClick: () => void }) {
+      return (
+        <Tooltip label="Вставить медиа" withArrow>
+          <ActionIcon
+            variant="default"
+            size="md"
+            aria-label="Insert media"
+            onClick={onClick}
+          >
+          <IconPhoto size={16} />
+          </ActionIcon>
+        </Tooltip>
+  );
+}
     return (
       <Box>
         <RichTextEditor editor={editor} style={{ minHeight }}>
@@ -290,6 +304,9 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
             <RichTextEditor.ControlsGroup>
               <RichTextEditor.Undo />
               <RichTextEditor.Redo />
+            </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <MediaControl onClick={() => setMediaModalOpened(true)} />
             </RichTextEditor.ControlsGroup>
           </RichTextEditor.Toolbar>
 
