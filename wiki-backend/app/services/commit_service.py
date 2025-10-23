@@ -12,8 +12,9 @@ from app.models.article import ArticleFull, Commit, Branch, CommitParent, Articl
 from app.models.user import User
 from app.schemas.article import CommitResponse, CommitCreateInternal, CommitResponseDetailed, DiffResponse
 import whatthepatch
+import logging
 
-
+logger = logging.getLogger(__name__)
 class CommitService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -139,7 +140,9 @@ class CommitService:
                     )
                 )
                 previous_full_result = await self.db.execute(previous_full_query)
-                previous_full_content = previous_full_result.scalar_one_or_none() or ""
+                previous_full_content = previous_full_result.scalar_one_or_none()
+                if not previous_full_content:
+                    raise ValueError("Couldn't find full content of the article!!")
         
         # Create diff
         if previous_commit and previous_full_content:
@@ -343,15 +346,14 @@ class CommitService:
             # Apply all patches
             result_lines = base_lines
             for patch in patches:
-                if patch.changes:
                     # Apply patch using whatthepatch's logic
-                    result_lines = self._apply_patch_to_lines(result_lines, patch)
-            
-            return ''.join(result_lines)
+                result_lines = whatthepatch.apply_diff(patch, result_lines)
+        
+            return '\n'.join(result_lines)
             
         except Exception as e:
             # Fallback to manual application if whatthepatch fails
-            print(f"whatthepatch failed, using fallback: {e}")
+            logger.warning(f"whatthepatch failed, using fallback: {e}")
             return self._apply_diff_fallback(base_content, diff_content)
     
     def _apply_patch_to_lines(self, lines: List[str], patch) -> List[str]:
@@ -428,10 +430,10 @@ class CommitService:
                 result.append(base_lines[j])
                 j += 1
             
-            return ''.join(result)
+            return '\n'.join(result)
             
         except Exception as e:
-            print(f"Fallback diff application also failed: {e}")
+            logger.error(f"Fallback diff application also failed: {e}")
             return base_content
     
     def _is_unified_diff(self, content: str) -> bool:
