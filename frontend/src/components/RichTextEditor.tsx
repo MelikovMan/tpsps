@@ -57,7 +57,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
                   }}
                 >
                   <Image
-                    src={`${import.meta.env.VITE_API_URL}/media/${media.id}/url`}
+                    src={`${media.public_url}`}
                     height={40}
                     width={40}
                     fit="cover"
@@ -82,7 +82,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
                   key={media.id}
                   variant="outline"
                   size="sm"
-                  onClick={() => onEmbed(media.id, 'video')}
+                  onClick={() => onEmbed(media.public_url, 'video')}
                   leftSection={<IconVideo size={16} />}
                 >
                   {media.original_filename}
@@ -105,7 +105,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
                   key={media.id}
                   variant="outline"
                   size="sm"
-                  onClick={() => onEmbed(media.id, 'audio')}
+                  onClick={() => onEmbed(media.public_url, 'audio')}
                   leftSection={<IconMusic size={16} />}
                 >
                   {media.original_filename}
