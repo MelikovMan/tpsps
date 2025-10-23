@@ -18,7 +18,7 @@ const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const ProfileEditPage = lazy(() => import('../pages/ProfileEditPage'));
 const AdminPage = lazy(() => import('../pages/AdminPage'));
-const ModerationPage = lazy(() => import('../pages/ModerationPage'));
+const ModerationPage = lazy(() => import('../components/Moderation/ModerationPage'));
 const UserListPage = lazy(() => import('../pages/UserListPage'));
 const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
 const ForbiddenPage = lazy(() => import('../pages/ForbiddenPage'));
