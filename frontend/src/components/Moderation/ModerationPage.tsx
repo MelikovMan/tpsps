@@ -20,7 +20,7 @@ import { IconSearch, IconRefresh, IconClock } from '@tabler/icons-react';
 import { useModerationData } from './useModerationData';
 import { CommitsTab } from './CommitTab';
 import { BranchesTab } from './BranchesTab';
-import { ArticlesTab } from './articlesTab.tsx';
+import { ArticlesTab } from './ArticlesTab';
 import { RevertCommitModal } from './RevertCommitModal';
 import { DeleteBranchModal } from './DeleteBranchModal';
 import { DeleteArticleModal } from './DeleteArticleModal';

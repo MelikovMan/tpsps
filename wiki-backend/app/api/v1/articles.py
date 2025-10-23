@@ -33,7 +33,7 @@ async def get_articles(
 ):
     query = select(Article.id, Article.title, Article.current_commit_id, Article.created_at, Article.updated_at, Article.status, Article.article_type)
     
-    if status_filter:
+    if status_filter and status_filter != 'all':
         query = query.where(Article.status == status_filter)
     
     if search:
