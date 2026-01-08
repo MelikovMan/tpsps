@@ -57,3 +57,5 @@ wiki-backend/static/uploads/
 wiki-backend/.pytest_cache/
 wiki-backend/.coverage
 wiki-backend/htmlcov/
+
+neunet_service/final_model_best_deberta

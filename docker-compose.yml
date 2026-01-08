@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+
+
+  neunet-service:
+    build: ./neunet_service
+    ports:
+      - "8010:8010"
+    networks:
+      - wiki-network
+
   frontend:
     build: ./frontend
     ports:
