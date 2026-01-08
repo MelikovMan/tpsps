@@ -143,11 +143,11 @@ class CommitService:
         else:
             content_diff = content # Первый коммит
             confidence, is_vandalism = await self._check_vandalism(content, "")
-            
+
         if is_vandalism:
-            if confidence > 0.9: 
+            if confidence > 0.85: 
                 raise ValueError(f"Правка отклонена: высокий риск вандализма (уверенность: {confidence:.2%})")
-            elif confidence > 0.6: 
+            else:
                 needs_moderation = True
         
         # Создаем новый коммит
