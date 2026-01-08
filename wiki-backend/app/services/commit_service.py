@@ -139,13 +139,16 @@ class CommitService:
             content_diff = self._create_diff(previous_commit.content_diff, content)
             added_text, removed_text = self._extract_added_removed_from_diff(content_diff)
             confidence, is_vandalism = await self._check_vandalism(added_text, removed_text)
-            if is_vandalism:
-                if confidence > 0.9: 
-                    raise ValueError(f"Правка отклонена: высокий риск вандализма (уверенность: {confidence:.2%})")
-                elif confidence > 0.6: 
-                    needs_moderation = True
+
         else:
-            content_diff = content  # Первый коммит
+            content_diff = content # Первый коммит
+            confidence, is_vandalism = await self._check_vandalism(content, "")
+            
+        if is_vandalism:
+            if confidence > 0.9: 
+                raise ValueError(f"Правка отклонена: высокий риск вандализма (уверенность: {confidence:.2%})")
+            elif confidence > 0.6: 
+                needs_moderation = True
         
         # Создаем новый коммит
         new_commit = Commit(
