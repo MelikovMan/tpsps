@@ -550,7 +550,7 @@ class CommitService:
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
-                    self.vandalism_check_url + "models/vandalism",
+                    self.neunet_url + "models/vandalism",
                     json={
                         "added_text": added_text,
                         "removed_text": removed_text
