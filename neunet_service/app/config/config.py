@@ -6,6 +6,7 @@ import os
 class Settings(BaseSettings):
     # Database
     vandalism_model_path: str = Field("final_model_best_deberta", alias="VANDALISM_MODEL_PATH")
+    vandalism_repo_path: str = Field("MeLiRom/deberta-model-wiki-vandalism", alias = "VANDALISM_REPO_PATH")
     maxlen: int = Field(512,alias="MAXLEN")
     debug: bool = Field(True,alias = "DEBUG")
     
