@@ -3,7 +3,7 @@ version: '3.8'
 services:
 
 
-  neunet-service:
+  neunets:
     build: ./neunet_service
     ports:
       - "8010:8010"
