@@ -39,12 +39,6 @@ export default function MarkdownRenderer({
       // Обрабатываем относительные пути
       let imageUrl = src;
       
-      // Если это путь к медиа из нашей системы
-      if (src && src.startsWith('/media/')) {
-        const mediaId = src.split('/')[2];
-        imageUrl = `${import.meta.env.VITE_API_URL}/media/${mediaId}/url`;
-      }
-      
       return (
         <img 
           src={imageUrl} 
@@ -59,10 +53,6 @@ export default function MarkdownRenderer({
       let videoUrl = src;
     
       // Handle media bucket video URLs
-      if (src && src.startsWith('/media/')) {
-        const mediaId = src.split('/')[2];
-        videoUrl = `${import.meta.env.VITE_API_URL}/media/${mediaId}/url`;
-      }
     
       return (
         <video
@@ -85,11 +75,7 @@ export default function MarkdownRenderer({
   audio({ src, ...props }: any) {
     let audioUrl = src;
     
-    // Handle media bucket audio URLs
-    if (src && src.startsWith('/media/')) {
-      const mediaId = src.split('/')[2];
-      audioUrl = `${import.meta.env.VITE_API_URL}/media/${mediaId}/url`;
-    }
+    // Handle media bucket audio U
     
     return (
       <audio

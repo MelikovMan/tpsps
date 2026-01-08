@@ -49,7 +49,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
                   key={media.id}
                   variant="outline"
                   size="xs"
-                  onClick={() => onEmbed(media.id, 'image')}
+                  onClick={() => onEmbed(media.public_url, 'image')}
                   style={{ 
                     border: '1px solid #dee2e6',
                     padding: 4,
@@ -189,7 +189,7 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
     const handleEmbedMedia = (mediaId: string, mediaType: 'image' | 'video' | 'audio') => {
       if (!editor) return;
 
-      const mediaUrl = `${import.meta.env.VITE_API_URL}/media/${mediaId}/url`;
+      const mediaUrl = mediaId;
       
       switch (mediaType) {
         case 'image':
