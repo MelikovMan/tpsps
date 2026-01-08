@@ -9,6 +9,11 @@ services:
       - "8010:8010"
     networks:
       - wiki-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build: ./frontend
@@ -39,6 +44,8 @@ services:
       redis:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      neunets:
         condition: service_healthy
     networks:
       - wiki-network

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, logger
+from fastapi import FastAPI, logger, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from app.router.router import api_router
 from app.config.config import settings
@@ -22,3 +22,7 @@ app.add_middleware(
 
 # API Router
 app.include_router(api_router, prefix="/models/")
+router = APIRouter()
+@router.get("/health")
+async def health_check():
+    return {"status": "healthy"}
