@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     # Database
     database_url: str = Field(..., alias="DATABASE_URL")
     database_url_sync: str = Field(..., alias="DATABASE_URL_SYNC")
+    neunets_url: str = Field("http://neunets:8010",allias="NEUNETS_URL")
     
     # Security
     secret_key: str = Field(..., alias="SECRET_KEY")

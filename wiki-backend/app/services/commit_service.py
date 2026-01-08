@@ -10,12 +10,16 @@ import re
 from typing import List, Tuple, Optional
 from app.models.article import ArticleFull, Commit, Branch, CommitParent, Article
 from app.models.user import User
+from app.models.moderation import Moderation
 from app.schemas.article import CommitResponse, CommitCreateInternal, CommitResponseDetailed, DiffResponse
+from app.core.config import settings
+import httpx
 
 
 class CommitService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.neunet_url = settings.neunets_url
 
     async def get_article_commits(self, article_id: UUID, skip: int = 0, limit: int = 50) -> List[Commit]:
         """Get all commits for a specific article"""
@@ -130,8 +134,16 @@ class CommitService:
             previous_commit = await self.get_commit(branch.head_commit_id)
         
         # Создаем diff
+        needs_moderation = False
         if previous_commit:
             content_diff = self._create_diff(previous_commit.content_diff, content)
+            added_text, removed_text = self._extract_added_removed_from_diff(content_diff)
+            confidence, is_vandalism = await self._check_vandalism(added_text, removed_text)
+            if is_vandalism:
+                if confidence > 0.9: 
+                    raise ValueError(f"Правка отклонена: высокий риск вандализма (уверенность: {confidence:.2%})")
+                elif confidence > 0.6: 
+                    needs_moderation = True
         else:
             content_diff = content  # Первый коммит
         
@@ -164,6 +176,15 @@ class CommitService:
             text = self.rebuild_content_at_commit(new_commit.id)
         )
         self.db.add(full_content)
+        if needs_moderation:
+            moderation = Moderation(
+                commit_id=new_commit.id,
+                reason="Автоматическая проверка на вандализм",
+                description=f"Правка требует проверки модератора. Уверенность модели: {confidence:.2%}",
+                reported_by=author_id,  # Автор коммита также является репортером
+                status="pending"
+            )
+            self.db.add(moderation)
 
         await self.db.commit()
         await self.db.refresh(new_commit)
@@ -490,3 +511,66 @@ class CommitService:
         )
         
         return revert_commit
+    def _extract_added_removed_from_diff(self, diff_content: str) -> Tuple[str, str]:
+        """
+        Извлечь добавленный и удаленный текст из diff
+        
+        Args:
+            diff_content: Строка diff в формате unified diff
+            
+        Returns:
+            tuple: (added_text, removed_text)
+        """
+        added_lines = []
+        removed_lines = []
+        
+        for line in diff_content.splitlines():
+            # Пропускаем заголовки
+            if line.startswith('---') or line.startswith('+++') or line.startswith('@@'):
+                continue
+            
+            # Добавленные строки
+            if line.startswith('+') and not line.startswith('++'):
+                added_lines.append(line[1:])
+            # Удаленные строки
+            elif line.startswith('-') and not line.startswith('--'):
+                removed_lines.append(line[1:])
+        
+        added_text = '\n'.join(added_lines)
+        removed_text = '\n'.join(removed_lines)
+        
+        return added_text, removed_text
+    async def _check_vandalism(self, added_text: str, removed_text: str) -> Tuple[float, bool]:
+        """
+        Проверить правку на вандализм с помощью нейросетевой модели
+        
+        Возвращает:
+            tuple: (confidence, is_vandalism)
+        """
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    self.vandalism_check_url + "models/vandalism",
+                    json={
+                        "added_text": added_text,
+                        "removed_text": removed_text
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    confidence = result.get("confidence", 0)
+                    predicted_class = result.get("predicted_class", 0)
+                    
+                    # Предполагаем, что класс 1 - вандализм
+                    is_vandalism = predicted_class == 1
+                    return confidence, is_vandalism
+                else:
+                    # Если сервис недоступен, пропускаем проверку
+                    print(f"Vandalism check service returned {response.status_code}")
+                    return 0, False
+                    
+        except Exception as e:
+            # В случае ошибки пропускаем проверку
+            print(f"Error checking vandalism: {e}")
+            return 0, False
