@@ -14,16 +14,12 @@ class SearchService:
         limit: int = 20,
         offset: int = 0,
     ) -> Tuple[int, List[Dict[str, Any]]]:
-        """
-        Выполняет поиск статей по запросу q.
-        Возвращает (total_count, список результатов).
-        """
-        if not q:
-            return 0, []
-
-        # Определяем конфигурацию для полнотекстового поиска
-        config_map = {"ru": "russian", "en": "english"}
-        config = config_map.get(language, "simple") if language else "simple"
+        config_map = {"ru": ("russian", "tsv_ru"), "en": ("english", "tsv_en")}
+        if language in config_map:
+            config, tsv_column = config_map[language]
+        else:
+            config = "simple"
+            tsv_column = None
 
         params = {
             "q": q,
@@ -33,61 +29,68 @@ class SearchService:
             "offset": offset,
         }
 
-        # CTE для получения последнего коммита в main ветке каждой статьи
+        if tsv_column:
+            tsv_expr = f"aft.{tsv_column}"
+            tsv_query_expr = "plainto_tsquery(:config, :q)"
+        else:
+            tsv_expr = "to_tsvector(:config, aft.text)"
+            tsv_query_expr = "plainto_tsquery(:config, :q)"
+
         base_cte = """
             WITH main_commits AS (
-                SELECT DISTINCT ON (b.article_id) b.article_id, b.head_commit_id
-                FROM branches b
-                WHERE b.name = 'main'
-                ORDER BY b.article_id, b.created_at DESC
+                SELECT DISTINCT ON (article_id) article_id, head_commit_id
+                FROM branches
+                WHERE name = 'main'
+                ORDER BY article_id, created_at DESC
             )
         """
 
-        # Условия поиска в зависимости от fields
         if fields == "title":
             where_cond = "a.title % :q"
         elif fields == "content":
-            where_cond = "to_tsvector(:config, aft.text) @@ plainto_tsquery(:config, :q)"
-        else:  # both
-            where_cond = "(a.title % :q OR to_tsvector(:config, aft.text) @@ plainto_tsquery(:config, :q))"
+            where_cond = f"{tsv_expr} @@ {tsv_query_expr}"
+        else:
+            where_cond = f"(a.title % :q OR {tsv_expr} @@ {tsv_query_expr})"
 
-        # Подсчёт общего количества результатов
-        count_sql = base_cte + """
+        count_sql = base_cte + f"""
             SELECT COUNT(*)
             FROM articles a
             JOIN main_commits mc ON a.id = mc.article_id
             JOIN articles_full_text aft ON mc.head_commit_id = aft.commit_id
-            WHERE a.status = 'published' AND {}""".format(where_cond)
-
+            WHERE {where_cond}
+        """
         total = await self.db.scalar(text(count_sql), params) or 0
 
         if total == 0:
             return 0, []
 
-        # Основной запрос с подзапросом для использования алиасов в ORDER BY
-        main_sql = base_cte + """
+        rank_expr = f"ts_rank_cd({tsv_expr}, {tsv_query_expr})"
+        sim_expr = "similarity(a.title, :q)"
+
+        if fields == "title":
+            order_expr = "sub.sim_title"
+        elif fields == "content":
+            order_expr = "sub.rank_content"
+        else:
+            order_expr = "(sub.rank_content * 0.5 + sub.sim_title * 1.0)"
+
+        main_sql = base_cte + f"""
             SELECT sub.id, sub.title, sub.created_at, sub.updated_at,
                    sub.snippet, sub.rank_content, sub.sim_title
             FROM (
                 SELECT a.id, a.title, a.created_at, a.updated_at,
-                       ts_headline(:config, aft.text, plainto_tsquery(:config, :q),
+                       ts_headline(:config, aft.text, {tsv_query_expr},
                                    'StartSel=<mark>, StopSel=</mark>, MaxWords=30, MinWords=15') as snippet,
-                       ts_rank_cd(to_tsvector(:config, aft.text), plainto_tsquery(:config, :q)) as rank_content,
-                       similarity(a.title, :q) as sim_title
+                       {rank_expr} as rank_content,
+                       {sim_expr} as sim_title
                 FROM articles a
                 JOIN main_commits mc ON a.id = mc.article_id
                 JOIN articles_full_text aft ON mc.head_commit_id = aft.commit_id
-                WHERE a.status = 'published' AND {} 
+                WHERE a.status = 'published' AND {where_cond}
             ) sub
-            ORDER BY
-                CASE
-                    WHEN :fields = 'title' THEN sub.sim_title
-                    WHEN :fields = 'content' THEN sub.rank_content
-                    ELSE (sub.rank_content * 0.5 + sub.sim_title * 1.0)
-                END DESC,
-                sub.updated_at DESC
+            ORDER BY {order_expr} DESC, sub.updated_at DESC
             OFFSET :offset LIMIT :limit
-        """.format(where_cond)
+        """
 
         result = await self.db.execute(text(main_sql), params)
         rows = result.mappings().all()

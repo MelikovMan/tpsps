@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from fastapi_cache.decorator import cache
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.schemas.search import SearchQueryParams, SearchResponse, SearchResultItem
 from app.services.search_service import SearchService
-
 router = APIRouter()
 
 @router.get("/", response_model=SearchResponse)
+@cache(expire=settings.cache_expire) 
 async def search_articles(
     params: SearchQueryParams = Depends(),
     db: AsyncSession = Depends(get_db)
