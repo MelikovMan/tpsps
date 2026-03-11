@@ -26,7 +26,7 @@ from app.core.config import settings
 from app.core.database import sync_engine
 from app.models.article import Article, Commit, CommitParent, Branch, ArticleFull
 from app.models.user import User
-from app.models.permissions import Permission
+from app.models.permission import Permission
 
 # Инициализация Faker для двух языков
 fake_en = faker.Faker('en_US')
