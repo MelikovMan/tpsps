@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -16,6 +16,6 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 COPY . .
 
-RUN chmod +x ./scripts/start.sh
+RUN chmod +x app/scripts/start.sh
 
-CMD ["./scripts/start.sh"]
+CMD ["bash", "app/scripts/start.sh"]

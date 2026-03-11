@@ -1,11 +1,12 @@
 from fastapi import FastAPI, logger, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.router.router import api_router
 from app.config.config import settings
 
 app = FastAPI(
-    title="Wiki API",
-    description="FastAPI Wiki Backend",
+    title="Wiki API Neunets",
+    description="FastAPI Wiki Neunet sService",
     version="1.0.0",
     debug=settings.debug
 )
@@ -21,8 +22,8 @@ app.add_middleware(
 
 
 # API Router
-app.include_router(api_router, prefix="/models/")
+app.include_router(api_router, prefix="/models")
 router = APIRouter()
-@router.get("/health")
+@app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return JSONResponse(content={"status": "healthy"})
