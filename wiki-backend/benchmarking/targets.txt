@@ -1,0 +1,1 @@
+GET http://localhost:8000/api/v1/search/?q=great&language=en&fields=both&limit=20&offset=0
