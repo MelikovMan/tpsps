@@ -528,14 +528,11 @@ class CommitService:
         removed_lines = []
         
         for line in diff_content.splitlines():
-            # Пропускаем заголовки
             if line.startswith('---') or line.startswith('+++') or line.startswith('@@'):
                 continue
             
-            # Добавленные строки
             if line.startswith('+') and not line.startswith('++'):
                 added_lines.append(line[1:])
-            # Удаленные строки
             elif line.startswith('-') and not line.startswith('--'):
                 removed_lines.append(line[1:])
         
@@ -565,15 +562,12 @@ class CommitService:
                     confidence = result.get("confidence", 0)
                     predicted_class = result.get("predicted_class", 0)
                     
-                    # Предполагаем, что класс 1 - вандализм
                     is_vandalism = predicted_class == 1
                     return confidence, is_vandalism
                 else:
-                    # Если сервис недоступен, пропускаем проверку
                     print(f"Vandalism check service returned {response.status_code}")
                     return 0, False
                     
         except Exception as e:
-            # В случае ошибки пропускаем проверку
             print(f"Error checking vandalism: {e}")
             return 0, False
