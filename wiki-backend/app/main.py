@@ -3,6 +3,29 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.core.database import AsyncSessionLocal
+
+from app.core.typesense_client import typesense_client
+import typesense.exceptions
+
+def ensure_typesense_collection():
+    schema = {
+        'name': 'articles',
+        'fields': [
+            {'name': 'id', 'type': 'string'},
+            {'name': 'title', 'type': 'string'},
+            {'name': 'content', 'type': 'string'},
+            {'name': 'language', 'type': 'string', 'facet': True},
+            {'name': 'created_at', 'type': 'int64'},
+            {'name': 'updated_at', 'type': 'int64'},
+        ],
+        'default_sorting_field': 'updated_at'
+    }
+
+    try:
+        typesense_client.collections.create(schema)
+    except typesense.exceptions.ObjectAlreadyExists:
+        # коллекция уже существует
+        pass
 async def check_database_connection():
     try:
         async with AsyncSessionLocal() as session:
@@ -35,6 +58,7 @@ app.add_middleware(
 async def startup_event():
     await init_redis_cache()
     success = await check_database_connection()
+    ensure_typesense_collection()
     if not success:
         raise Exception("Failed to connect to database")
     

@@ -46,7 +46,9 @@ class Settings(BaseSettings):
     MINIO_DEFAULT_BUCKET: str = Field("media-files", alias="MINIO_DEFAULT_BUCKET")
     minio_public_url: str = Field("http://localhost:9000", alias="MINIO_PUBLIC_URL")
 
-
+    TYPESENSE_HOST: str = Field(...,alias="TYPESENSE_HOST")
+    TYPESENSE_PORT: int = Field(...,alias="TYPESENSE_PORT")
+    TYPESENSE_API_KEY: str = Field(...,alias="TYPESENSE_API_KEY")
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'
