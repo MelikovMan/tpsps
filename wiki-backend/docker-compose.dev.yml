@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  
   typesense:
     image: typesense/typesense:27.0
     ports:
@@ -16,8 +17,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-    networks:
-      - wiki-network
   postgres:
     hostname: postgres
     image: postgres:15
