@@ -1,6 +1,7 @@
 # app/services/search_factory.py
 from typing import Dict, Type, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from typesense import AsyncClient
 
 from app.core.enums import SearchEngineType
 from app.core.config import settings
@@ -23,7 +24,7 @@ class SearchServiceFactory:
         cls._services[engine_type] = service_class
 
     @classmethod
-    def create_service(cls, engine_type: SearchEngineType, db: Optional[AsyncSession] = None) -> BaseSearchService:
+    def create_service(cls, engine_type: SearchEngineType, db: Optional[AsyncSession] = None, typesense_client: Optional[AsyncClient]=None) -> BaseSearchService:
         """Создаёт экземпляр поискового сервиса для указанного типа."""
         service_class = cls._services.get(engine_type)
         if not service_class:
@@ -34,6 +35,10 @@ class SearchServiceFactory:
             if db is None:
                 raise ValueError("Для PostgresSearchService требуется сессия базы данных")
             return service_class(db)
+        elif engine_type == SearchEngineType.TYPESENSE:
+            if typesense_client is None:
+                raise ValueError("Для PostgresSearchService требуется асинхронный клиент")
+            return service_class(typesense_client)
         else:
             return service_class()
 

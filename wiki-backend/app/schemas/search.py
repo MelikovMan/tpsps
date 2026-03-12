@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Union
 from uuid import UUID
 from datetime import datetime
-
 class SearchQueryParams(BaseModel):
     """Параметры поискового запроса."""
     q: str = Field(..., min_length=1, description="Поисковый запрос")
@@ -29,7 +28,7 @@ class SearchResultItem(BaseModel):
     snippet: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    rank_content: Optional[float] = Field(
+    rank_content: Union[float, int, None] = Field(
         None,
         description="Релевантность по содержимому (ts_rank_cd)"
     )

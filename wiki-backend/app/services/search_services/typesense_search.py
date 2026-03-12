@@ -2,13 +2,14 @@
 from typing import List, Optional, Tuple, Dict, Any
 from datetime import datetime
 
+from typesense import AsyncClient
+
 from app.core.typesense_client import typesense_client
 from app.services.search_services.base_search import BaseSearchService
 
 
 class TypesenseSearchService(BaseSearchService):
-    def __init__(self):
-        # Клиент уже сконфигурирован глобально
+    def __init__(self, typesense_client: AsyncClient):
         self.client = typesense_client
 
     async def search(
@@ -42,7 +43,7 @@ class TypesenseSearchService(BaseSearchService):
             search_params['language'] = language  # для корректной стемминги
 
         try:
-            response = self.client.collections['articles'].documents.search(search_params)
+            response = await self.client.collections['articles'].documents.search(search_params)
         except Exception as e:
             # Логирование ошибки
             return 0, []
@@ -82,7 +83,7 @@ class TypesenseSearchService(BaseSearchService):
                 'snippet': snippet,
                 'created_at': created_at,
                 'updated_at': updated_at,
-                'rank_content': hit.get('_ranking_score'),  # опционально
+                'rank_content': hit.get('text_match'),  # опционально
                 'sim_title': None,  # Typesense не предоставляет отдельно similarity
             })
 

@@ -59,11 +59,14 @@ async def startup_event():
     await init_redis_cache()
     success = await check_database_connection()
     print(f"Search engine is:{settings.SEARCH_ENGINE}")
-    ensure_typesense_collection()
+    await typesense_client.initialize()
     if not success:
         raise Exception("Failed to connect to database")
     
 # Static files
+@app.on_event("shutdown")
+async def shutdown_event():
+    await typesense_client.close()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # API Router
