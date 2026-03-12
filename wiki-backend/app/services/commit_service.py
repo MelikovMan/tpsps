@@ -194,6 +194,10 @@ class CommitService:
 
         await self.db.commit()
         await self.db.refresh(new_commit)
+        if branch.name == 'main':
+            from app.services.typesense_indexer import TypesenseIndexer
+            indexer = TypesenseIndexer(self.db)
+            await indexer.index_article(article_id)
         
         return new_commit
 

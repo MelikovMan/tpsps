@@ -1,6 +1,7 @@
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 from typing import List
+from app.core.enums import SearchEngineType
 import os
 
 class Settings(BaseSettings):
@@ -46,6 +47,7 @@ class Settings(BaseSettings):
     MINIO_DEFAULT_BUCKET: str = Field("media-files", alias="MINIO_DEFAULT_BUCKET")
     minio_public_url: str = Field("http://localhost:9000", alias="MINIO_PUBLIC_URL")
 
+    SEARCH_ENGINE: SearchEngineType = Field(SearchEngineType.POSTGRES, env="SEARCH_ENGINE")
     TYPESENSE_HOST: str = Field(...,alias="TYPESENSE_HOST")
     TYPESENSE_PORT: int = Field(...,alias="TYPESENSE_PORT")
     TYPESENSE_API_KEY: str = Field(...,alias="TYPESENSE_API_KEY")

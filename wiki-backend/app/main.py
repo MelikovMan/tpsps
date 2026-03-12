@@ -58,6 +58,7 @@ app.add_middleware(
 async def startup_event():
     await init_redis_cache()
     success = await check_database_connection()
+    print(f"Search engine is:{settings.SEARCH_ENGINE}")
     ensure_typesense_collection()
     if not success:
         raise Exception("Failed to connect to database")
