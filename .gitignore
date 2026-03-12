@@ -34,7 +34,7 @@ wiki-backend/venv/
 wiki-backend/ENV/
 wiki-backend/env.bak/
 wiki-backend/venv.bak/
-
+wiki-backend/benchmarking/results
 # IDE
 wiki-backend/.vscode/
 wiki-backend/.idea/
