@@ -86,7 +86,7 @@ class SearchService:
                 FROM articles a
                 JOIN main_commits mc ON a.id = mc.article_id
                 JOIN articles_full_text aft ON mc.head_commit_id = aft.commit_id
-                WHERE a.status = 'published' AND {where_cond}
+                WHERE {where_cond}
             ) sub
             ORDER BY {order_expr} DESC, sub.updated_at DESC
             OFFSET :offset LIMIT :limit

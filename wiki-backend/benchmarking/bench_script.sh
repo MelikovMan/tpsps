@@ -1,3 +1,3 @@
-vegeta attack -targets=./targets.txt -duration=60s -rate=20 -workers=10 > results.bin
-vegeta report results.bin > report.txt
-vegeta plot results.bin > plot.html
+vegeta attack -targets=./targets.txt -duration=20s -rate=5 > results/results.bin
+vegeta report results/results.bin > results/report.txt
+vegeta plot results/results.bin > results/plot.html
