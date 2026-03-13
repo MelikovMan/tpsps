@@ -31,7 +31,7 @@ typesense_client = typesense.Client({
         'protocol': 'http',
     }],
     'api_key': TYPESENSE_API_KEY,
-    'connection_timeout_seconds': 5
+    'connection_timeout_seconds': 10
 })
 
 def ensure_collection():

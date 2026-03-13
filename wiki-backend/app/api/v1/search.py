@@ -26,7 +26,9 @@ async def search_articles(
         language=params.language,
         fields=params.fields,
         limit=params.limit,
-        offset=params.offset
+        offset=params.offset,
+        hybrid=params.hybrid,
+        semantic_weight=params.semantic_weight
     )
     return SearchResponse(
         query=params.q,
