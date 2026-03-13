@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.core.database import AsyncSessionLocal
 
 from app.core.typesense_client import typesense_client
+from app.services.typesense_sync_worker import TypesenseSyncWorker
 import typesense.exceptions
 
 def ensure_typesense_collection():
