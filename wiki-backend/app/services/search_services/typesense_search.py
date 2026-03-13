@@ -48,6 +48,7 @@ class TypesenseSearchService(BaseSearchService):
             # Используем поле embedding, которое должно быть настроено в коллекции
             # Параметры: k=100 (количество ближайших соседей), alpha = semantic_weight
             search_params['vector_query'] = f'embedding:([], k:100, alpha:{semantic_weight})'
+            search_params["exclude_fields"] = "embedding"
 
         try:
             response = await self.client.collections['articles'].documents.search(search_params)
@@ -62,21 +63,7 @@ class TypesenseSearchService(BaseSearchService):
         for hit in hits:
             doc = hit['document']
             # Извлекаем подсвеченный фрагмент (snippet)
-            snippet = None
-            highlights = hit.get('highlights', [])
-            if highlights:
-                # Выбираем подсветку из контента, если есть, иначе из заголовка
-                for h in highlights:
-                    if h.get('field') == 'content' and h.get('snippet'):
-                        snippet = h['snippet']
-                        break
-                if not snippet:
-                    for h in highlights:
-                        if h.get('field') == 'title' and h.get('snippet'):
-                            snippet = h['snippet']
-                            break
-
-            # Преобразование временных меток (Typesense хранит int64 timestamp)
+            snippet = self._extract_snippet(hit.get('highlights', []))
             created_at = doc.get('created_at', 0)
             updated_at = doc.get('updated_at', 0)
             if created_at:
@@ -95,3 +82,17 @@ class TypesenseSearchService(BaseSearchService):
             })
 
         return total, results
+    def _extract_snippet(self, highlights: List[Dict]) -> Optional[str]:
+        """Извлекает подсвеченный фрагмент из результатов поиска."""
+        if not highlights:
+            return None
+
+        for h in highlights:
+            if h.get('field') == 'content' and h.get('snippet'):
+                return h['snippet']
+
+        for h in highlights:
+            if h.get('field') == 'title' and h.get('snippet'):
+                return h['snippet']
+       
+        return None
