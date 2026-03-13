@@ -19,12 +19,14 @@ class TypesenseSearchService(BaseSearchService):
         fields: str = "both",
         limit: int = 20,
         offset: int = 0,
+        hybrid: bool = False,
+        semantic_weight: float = 0.5,
     ) -> Tuple[int, List[Dict[str, Any]]]:
         if not q:
             return 0, []
 
         # Определяем поля для поиска
-        query_by = "title,content" if fields == "both" else fields
+        query_by = f'{"embedding, " if hybrid else ""}{"title,content" if fields == "both" else fields}'
 
         # Подготовка параметров поиска
         search_params = {
@@ -41,6 +43,11 @@ class TypesenseSearchService(BaseSearchService):
         if language:
             search_params['filter_by'] = f'language:={language}'
             search_params['language'] = language  # для корректной стемминги
+
+        if hybrid:
+            # Используем поле embedding, которое должно быть настроено в коллекции
+            # Параметры: k=100 (количество ближайших соседей), alpha = semantic_weight
+            search_params['vector_query'] = f'embedding:([], k:100, alpha:{semantic_weight})'
 
         try:
             response = await self.client.collections['articles'].documents.search(search_params)

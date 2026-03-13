@@ -16,6 +16,8 @@ class BaseSearchService(ABC):
         fields: str = "both",
         limit: int = 20,
         offset: int = 0,
+        hybrid: bool = False,
+        semantic_weight: float = 0.5,
     ) -> Tuple[int, List[Dict[str, Any]]]:
         """
         Выполняет поиск по запросу q.

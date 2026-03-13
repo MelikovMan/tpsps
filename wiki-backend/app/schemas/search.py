@@ -17,6 +17,16 @@ class SearchQueryParams(BaseModel):
     )
     limit: int = Field(20, ge=1, le=100, description="Количество результатов на странице")
     offset: int = Field(0, ge=0, description="Смещение для пагинации")
+    hybrid: bool = Field(
+        False,
+        description="Использовать гибридный поиск (комбинация текстового и семантического)"
+    )
+    semantic_weight: float = Field(
+        0.5,
+        ge=0.0,
+        le=1.0,
+        description="Вес семантической составляющей (0 - только текст, 1 - только семантика)"
+    )
 
 
 class SearchResultItem(BaseModel):
