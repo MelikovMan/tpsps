@@ -37,7 +37,7 @@ typesense_client = typesense.Client({
 def ensure_collection():
     """Создаёт коллекцию в Typesense, если она ещё не существует."""
     schema = {
-        'name': COLLECTION_NAME,
+        'name': 'articles',
         'fields': [
             {'name': 'id', 'type': 'string'},
             {'name': 'title', 'type': 'string'},
@@ -45,6 +45,16 @@ def ensure_collection():
             {'name': 'language', 'type': 'string', 'facet': True},
             {'name': 'created_at', 'type': 'int64'},
             {'name': 'updated_at', 'type': 'int64'},
+            {
+                'name': 'embedding',
+                'type': 'float[]',
+                'embed': {
+                    'from': ['title', 'content'],          # поля для генерации эмбеддинга
+                    'model_config': {
+                        'model_name': settings.TYPESENSE_EMBEDDING_MODEL
+                    }
+                }
+            }
         ],
         'default_sorting_field': 'updated_at'
     }
@@ -52,7 +62,9 @@ def ensure_collection():
         typesense_client.collections.create(schema)
         print(f"Коллекция '{COLLECTION_NAME}' создана.")
     except typesense.exceptions.ObjectAlreadyExists:
-        print(f"Коллекция '{COLLECTION_NAME}' уже существует.")
+        print(f"Коллекция '{COLLECTION_NAME}' уже существует. Пересоздания")
+        typesense_client.collections['articles'].delete()
+        typesense_client.collections.create(schema)
     except Exception as e:
         print(f"Ошибка создания коллекции: {e}")
         sys.exit(1)
