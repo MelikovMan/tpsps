@@ -35,7 +35,8 @@ class TypesenseSyncWorker:
                     SearchSyncQueue.operation,
                     SearchSyncQueue.created_at
                 )
-                .order_by(SearchSyncQueue.created_at.desc())
+                
+                .order_by(SearchSyncQueue.article_id, SearchSyncQueue.created_at.desc())
                 .distinct(SearchSyncQueue.article_id)
                 .limit(batch_size)
                 .subquery()

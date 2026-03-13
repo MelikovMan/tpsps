@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, logger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -61,6 +62,8 @@ async def startup_event():
     success = await check_database_connection()
     print(f"Search engine is:{settings.SEARCH_ENGINE}")
     await typesense_client.initialize()
+    sync_worker = TypesenseSyncWorker(interval_seconds=60)
+    asyncio.create_task(sync_worker.run())
     if not success:
         raise Exception("Failed to connect to database")
     
