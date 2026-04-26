@@ -29,7 +29,7 @@ import {
   IconAlertCircle 
 } from '@tabler/icons-react';
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
-import { useArticle, useEditArticle, useArticleBranches } from '../api/articles';
+import { useArticle, useEditArticle, useArticleBranches, useCreateBranchFromCommit } from '../api/articles';
 import TurndownService from 'turndown';
 import MarkdownRenderer, { MemoizedMarkdown } from '../components/MarkdownRenderer';
 //import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
@@ -37,6 +37,8 @@ import { marked } from 'marked';
 import { MultiSelect, Loader } from '@mantine/core';
 import { useAllCategoriesFlat } from '../api/categories';   // we'll create this hook
 import { useArticleCategories, useAddArticleCategories, useRemoveArticleCategory } from '../api/articles';
+import apiClient from '../api/client';
+import type { BranchResponse } from '../api/article';
 interface ArticleEditFormData {
   title: string;
   status: string;
@@ -59,6 +61,13 @@ const typeOptions = [
 const turndownService = new TurndownService();
 //turndownService.use(turndownGfm);
 export default function ArticleEditPage() {
+
+  const [conflictData, setConflictData] = useState<{
+  message: string;
+  currentHeadCommitId?: string;
+} | null>(null);
+
+  const createBranchFromCommitMutation = useCreateBranchFromCommit();
 
   const navigate = useNavigate();
   const { articleId } = useParams<{ articleId: string }>();
@@ -181,6 +190,25 @@ export default function ArticleEditPage() {
       const branchParam = branch !== 'main' ? `?branch=${branch}` : '';
       navigate(`/articles/${articleId}${branchParam}`);
     } catch (error: any) {
+      if (error.response?.status === 409) {
+          let headCommitId: string | undefined;
+          try {
+            // Get the current head commit of the branch
+            const branchResponse = await apiClient.get<BranchResponse>(
+              `/branches/article/${articleId}/by-name/${branch}`
+          );
+          headCommitId = branchResponse.data.head_commit_id;
+          } catch {
+          // ignore fetch error, show without commit id
+          }
+          setConflictData({
+            message: error.response.data?.detail || 'Конфликт: ветка была обновлена другим пользователем.',
+            currentHeadCommitId: headCommitId,
+          });
+          return; // Stop here, no generic error notification
+    }
+
+    // Other errors
       console.error('Error updating article:', error);
       
       const errorMessage = error?.response?.data?.detail || 
@@ -310,7 +338,7 @@ const handleCategoryChange = async (newIds: string[]) => {
         await removeCategoryMutation.mutateAsync({ articleId: articleId!, categoryId: id });
       }
     }
-    notifications.show({ title: 'Категории обновлены', color: 'green' });
+    notifications.show({ message: 'Категории обновлены', color: 'green' });
   } catch (error) {
     // Revert on error
     setSelectedCategoryIds(oldIds);
@@ -365,7 +393,56 @@ const handleCategoryChange = async (newIds: string[]) => {
             Вы редактируете статью в ветке "{branch}". Изменения будут сохранены в эту ветку.
           </Alert>
         )}
-
+        {conflictData && (
+      <Alert
+        color="red"
+        title="Конфликт версий"
+        icon={<IconAlertCircle size={16} />}
+        mb="md"
+      >
+        <Text>{conflictData.message}</Text>
+        <Group mt="md">
+          <Button
+            color="blue"
+            onClick={async () => {
+              if (!conflictData.currentHeadCommitId) return;
+              try {
+                const branchName = `${branch}-conflict-${Date.now()}`;
+                await createBranchFromCommitMutation.mutateAsync({
+                  articleId: articleId!,
+                  branchData: {
+                    name: branchName,
+                    source_commit_id: conflictData.currentHeadCommitId,
+                    description: `Ветка для разрешения конфликта из ${branch}`,
+                },
+              });
+                navigate(`/articles/${articleId}/edit?branch=${encodeURIComponent(branchName)}`);
+                setConflictData(null);
+          }  catch (err) {
+                notifications.show({
+                  title: 'Ошибка',
+                  message: 'Не удалось создать ветку',
+                  color: 'red',
+                });
+              }
+            }}
+            disabled={!conflictData.currentHeadCommitId}
+            >
+              Создать новую ветку из текущей версии
+            </Button>
+            <Button
+              variant="light"
+              color="gray"
+              onClick={() => {
+                setConflictData(null);
+                navigate(`/articles/${articleId}?branch=${branch}`);
+            }}
+              >
+              Отменить изменения и вернуться к статье
+            </Button>
+          </Group>
+        </Alert>
+        )}
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="md">
             <TextInput

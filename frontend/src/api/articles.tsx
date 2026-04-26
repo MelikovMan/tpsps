@@ -297,7 +297,8 @@ export const useEditArticle = () => {
       const commitData: CommitCreate = {
         message: editData.message,
         content: editData.content,
-        branch_id: branchResponse.data.id
+        branch_id: branchResponse.data.id,
+        base_commit_id: branchResponse.data.head_commit_id,
       };
       
       const response = await apiClient.post<CommitResponse>(

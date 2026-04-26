@@ -69,6 +69,7 @@ export interface CommitCreate {
   message: string;
   content: string;
   branch_id?: string;
+  base_commit_id?: string;
 }
 
 export interface DiffResponse {
