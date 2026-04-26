@@ -1,7 +1,7 @@
 import sys
 import os
 import time
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 # Добавляем путь к проекту для импорта настроек и моделей
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -31,9 +31,9 @@ typesense_client = typesense.Client({
         'protocol': 'http',
     }],
     'api_key': TYPESENSE_API_KEY,
-    'connection_timeout_seconds': 10
+    'connection_timeout_seconds': 15
 })
-
+BATCH_SIZE = 35
 def ensure_collection():
     """Создаёт коллекцию в Typesense, если она ещё не существует."""
     schema = {
@@ -101,6 +101,28 @@ def get_article_content(session: Session, article_id, commit_id) -> Optional[str
     print(f"Предупреждение: полный текст для коммита {commit_id} не найден в articles_full_text")
     return None
 
+
+def send_batch(batch: List[Dict[str, Any]]):
+    """Отправляет batch документов в Typesense через import_batch с action=upsert."""
+    if not batch:
+        return
+    try:
+        # Выполняем bulk import с действием upsert
+        results = typesense_client.collections[COLLECTION_NAME].documents.import_(
+            batch, {'action': 'upsert'}
+        )
+        # results — это список словарей с результатами для каждого документа
+        success_count = 0
+        for i, res in enumerate(results):
+            if not res.get('success'):
+                print(f"Ошибка индексации документа {batch[i].get('id')}: {res.get('error')}")
+            else:
+                success_count += 1
+        if success_count < len(batch):
+            print(f"Batch: успешно {success_count}/{len(batch)} документов")
+    except Exception as e:
+        print(f"Ошибка отправки batch: {e}")
+
 def main():
     print("Начало индексации статей в Typesense...")
     ensure_collection()
@@ -114,6 +136,8 @@ def main():
         print(f"Найдено статей: {total}")
 
         indexed = 0
+        batch = []
+
         for article in articles:
             # Находим последний коммит в main ветке
             branch = session.execute(
@@ -150,15 +174,13 @@ def main():
                 'updated_at': int(article.updated_at.timestamp()) if article.updated_at else 0,
             }
 
-            # Отправляем в Typesense (upsert)
-            try:
-                typesense_client.collections[COLLECTION_NAME].documents.upsert(document)
-                indexed += 1
-            except Exception as e:
-                print(f"Ошибка индексации статьи {article.id}: {e}")
-
-            if indexed % 10 == 0:
+            batch.append(document)
+            indexed += 1
+            if len(batch) >= BATCH_SIZE:
+                send_batch(batch)
+                batch = []  # очищаем batch
                 print(f"Проиндексировано {indexed}/{total}")
+            # Отправляем в Typesense (upsert)
 
         print(f"Индексация завершена. Проиндексировано статей: {indexed}")
 

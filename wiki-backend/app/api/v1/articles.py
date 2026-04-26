@@ -280,3 +280,83 @@ async def create_branch(
     await db.refresh(branch)
     
     return BranchResponse.model_validate(branch)
+
+
+from app.models.category import Category, ArticleCategory
+from app.schemas.category import CategoryResponse
+from app.services.category_service import CategoryService
+
+# ---------- NEW ROUTES ----------
+
+@router.get("/{article_id}/categories", response_model=List[CategoryResponse])
+async def get_article_categories(
+    article_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """Return all categories assigned to the article."""
+    result = await db.execute(
+        select(Category)
+        .options(selectinload(Category.children))
+        .join(ArticleCategory)
+        .where(ArticleCategory.article_id == article_id)
+        .order_by(Category.path)
+    )
+    categories = result.scalars().unique().all()
+    category_service = CategoryService(db)
+    return [category_service.category_to_response(c) for c in categories]
+
+
+@router.post("/{article_id}/categories", status_code=status.HTTP_201_CREATED)
+async def add_article_categories(
+    article_id: UUID,
+    category_ids: List[UUID],   # Pydantic will parse a JSON array
+    current_user = Depends(require_permission("edit")),
+    db: AsyncSession = Depends(get_db)
+):
+    """Add one or more categories to an article."""
+    # Verify article exists
+    article = await db.get(Article, article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    # Verify all category IDs exist
+    for cid in category_ids:
+        cat = await db.get(Category, cid)
+        if not cat:
+            raise HTTPException(status_code=404, detail=f"Category {cid} not found")
+    
+    # Insert new associations (ignore if already exists)
+    for cid in category_ids:
+        # Check if association already exists
+        existing = await db.execute(
+            select(ArticleCategory).where(
+                and_(ArticleCategory.article_id == article_id, ArticleCategory.category_id == cid)
+            )
+        )
+        if existing.scalar_one_or_none() is None:
+            db.add(ArticleCategory(article_id=article_id, category_id=cid))
+    
+    await db.commit()
+    return {"message": "Categories added successfully"}
+
+
+@router.delete("/{article_id}/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_article_category(
+    article_id: UUID,
+    category_id: UUID,
+    current_user = Depends(require_permission("edit")),
+    db: AsyncSession = Depends(get_db)
+):
+    """Remove a single category from an article."""
+    result = await db.execute(
+        select(ArticleCategory).where(
+            and_(ArticleCategory.article_id == article_id, ArticleCategory.category_id == category_id)
+        )
+    )
+    assoc = result.scalar_one_or_none()
+    if not assoc:
+        raise HTTPException(status_code=404, detail="Category not assigned to article")
+    
+    await db.delete(assoc)
+    await db.commit()
+    # no body returned

@@ -373,3 +373,70 @@ export const useDeleteArticle = () => {
     }
   });
 };
+
+import { type SearchResponse } from './article';
+import type { CategoryResponse } from './types/categories';
+
+export const useSearchArticles = (params: {
+  q: string;
+  language?: string;
+  fields?: string;
+  limit?: number;
+  offset?: number;
+  hybrid?: boolean;
+  semantic_weight?: number;
+}) => {
+  return useQuery({
+    queryKey: ['search', params],
+    queryFn: async () => {
+      const response = await apiClient.get<SearchResponse>('/search/', {
+        params: {
+          ...params,
+          hybrid: params.hybrid ? true : undefined,
+        },
+      });
+      return response.data;
+    },
+    enabled: !!params.q,               // включаем запрос только при наличии строки
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+
+// Fetch categories assigned to an article
+export const useArticleCategories = (articleId: string) => {
+  return useQuery({
+    queryKey: ['article', articleId, 'categories'],
+    queryFn: async () => {
+      const response = await apiClient.get<CategoryResponse[]>(`/articles/${articleId}/categories`);
+      return response.data;
+    },
+    enabled: !!articleId,
+  });
+};
+
+// Add categories to an article
+export const useAddArticleCategories = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ articleId, categoryIds }: { articleId: string; categoryIds: string[] }) => {
+      await apiClient.post(`/articles/${articleId}/categories`, categoryIds);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['article', variables.articleId, 'categories'] });
+    },
+  });
+};
+
+// Remove a category from an article
+export const useRemoveArticleCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ articleId, categoryId }: { articleId: string; categoryId: string }) => {
+      await apiClient.delete(`/articles/${articleId}/categories/${categoryId}`);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['article', variables.articleId, 'categories'] });
+    },
+  });
+};

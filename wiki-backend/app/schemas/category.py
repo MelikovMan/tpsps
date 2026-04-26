@@ -1,7 +1,8 @@
 # app/schemas/category.py
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from pydantic import BaseModel, ConfigDict, field_serializer
+from typing import Optional, List, Any
 from uuid import UUID
+from sqlalchemy_utils import Ltree
 
 class CategoryBase(BaseModel):
     name: str
@@ -19,6 +20,10 @@ class CategoryResponse(CategoryBase):
     
     id: UUID
     path: str
-    children: Optional[List["CategoryResponse"]] = None
+    children: Optional[List["str"]] = None
+
+    @field_serializer('path', when_used='always')
+    def serialize_path(self, path: Ltree, _info) -> str:
+        return str(path)
 
 CategoryResponse.model_rebuild()

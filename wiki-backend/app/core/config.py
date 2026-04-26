@@ -51,8 +51,7 @@ class Settings(BaseSettings):
     TYPESENSE_HOST: str = Field(...,alias="TYPESENSE_HOST")
     TYPESENSE_PORT: int = Field(...,alias="TYPESENSE_PORT")
     TYPESENSE_API_KEY: str = Field(...,alias="TYPESENSE_API_KEY")
-    TYPESENSE_EMBEDDING_MODEL: str = Field("ts/multilingual-e5-small", env="TYPESENSE_EMBEDDING_MODEL")
-    TYPESENSE_SEARCH_SEMANTIC_WEIGHT: float = Field(0.5, env="TYPESENSE_SEARCH_SEMANTIC_WEIGHT")
+    TYPESENSE_EMBEDDING_MODEL: str = Field("ts/multilingual-e5-base", env="TYPESENSE_EMBEDDING_MODEL")
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'

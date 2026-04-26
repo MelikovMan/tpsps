@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Container,
@@ -34,6 +34,9 @@ import TurndownService from 'turndown';
 import MarkdownRenderer, { MemoizedMarkdown } from '../components/MarkdownRenderer';
 //import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
 import { marked } from 'marked';
+import { MultiSelect, Loader } from '@mantine/core';
+import { useAllCategoriesFlat } from '../api/categories';   // we'll create this hook
+import { useArticleCategories, useAddArticleCategories, useRemoveArticleCategory } from '../api/articles';
 interface ArticleEditFormData {
   title: string;
   status: string;
@@ -56,6 +59,7 @@ const typeOptions = [
 const turndownService = new TurndownService();
 //turndownService.use(turndownGfm);
 export default function ArticleEditPage() {
+
   const navigate = useNavigate();
   const { articleId } = useParams<{ articleId: string }>();
   const [searchParams] = useSearchParams();
@@ -263,6 +267,56 @@ export default function ArticleEditPage() {
 
   const branchParam = branch !== 'main' ? `?branch=${branch}` : '';
 
+ const { data: allCategories = [], isLoading: allCatLoading } = useAllCategoriesFlat();
+const { data: articleCategories = [], isLoading: artCatLoading } = useArticleCategories(articleId!);
+const addCategoriesMutation = useAddArticleCategories();
+const removeCategoryMutation = useRemoveArticleCategory();
+
+const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+const initializedRef = useRef(false);
+
+// Initialise selectedCategoryIds only once when articleCategories first load
+useEffect(() => {
+  if (!initializedRef.current && articleCategories && articleCategories.length > 0) {
+    setSelectedCategoryIds(articleCategories.map(c => c.id));
+    initializedRef.current = true;
+  }
+}, [articleCategories]);
+
+// Reset the ref if the article changes (e.g., navigating to another article)
+useEffect(() => {
+  initializedRef.current = false;
+}, [articleId]);
+
+const categoryOptions = useMemo(() => {
+  return allCategories.map(cat => ({ value: cat.id, label: cat.name }));
+}, [allCategories]);
+
+const handleCategoryChange = async (newIds: string[]) => {
+  const oldIds = selectedCategoryIds;
+  const added = newIds.filter(id => !oldIds.includes(id));
+  const removed = oldIds.filter(id => !newIds.includes(id));
+
+  // Optimistically update UI
+  setSelectedCategoryIds(newIds);
+
+  try {
+    if (added.length > 0) {
+      await addCategoriesMutation.mutateAsync({ articleId: articleId!, categoryIds: added });
+    }
+    if (removed.length > 0) {
+      // Remove one at a time; alternatively batch them
+      for (const id of removed) {
+        await removeCategoryMutation.mutateAsync({ articleId: articleId!, categoryId: id });
+      }
+    }
+    notifications.show({ title: 'Категории обновлены', color: 'green' });
+  } catch (error) {
+    // Revert on error
+    setSelectedCategoryIds(oldIds);
+    notifications.show({ title: 'Ошибка', message: 'Не удалось обновить категории', color: 'red' });
+  }
+};
   return (
     <Container size="lg" py="xl">
       <Paper shadow="sm" radius="md" p="xl" pos="relative">
@@ -354,7 +408,18 @@ export default function ArticleEditPage() {
               required
               {...form.getInputProps('message')}
             />
-
+            {(allCatLoading || artCatLoading) ? <Loader size="sm" /> : (
+              <MultiSelect
+              label="Категории"
+                placeholder="Выберите категории"
+              data={categoryOptions}
+              value={selectedCategoryIds}
+              onChange={handleCategoryChange}
+              searchable
+              clearable
+              nothingFoundMessage="Категории не найдены"
+            />
+)}
             <Group justify="flex-end" mt="xl">
               <Button
                 variant="subtle"
