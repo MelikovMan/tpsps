@@ -104,7 +104,8 @@ class CommitService:
         author_id: UUID, 
         message: str, 
         content: str,
-        branch_id: Optional[UUID] = None
+        branch_id: Optional[UUID] = None,
+        base_commit_id: Optional[UUID] = None
     ) -> Commit:
         """Create a new commit in specified branch or main branch"""
         
@@ -125,6 +126,13 @@ class CommitService:
             
             if not branch:
                 raise ValueError("Branch not found")
+
+            if branch.head_commit_id != base_commit_id:
+                raise ValueError(
+                    f"Conflict: branch '{branch.name}' has been updated since you started editing. "
+                    f"Your base commit {base_commit_id} is not the current head ({branch.head_commit_id}). "
+                    "Please create a new branch from the current head or discard your changes."
+                )
         
         # Get previous commit to create diff
         previous_commit = None

@@ -1,8 +1,9 @@
 # app/schemas/user.py
-from pydantic import BaseModel, EmailStr, ConfigDict, Field
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from uuid import UUID
+import json
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -44,6 +45,16 @@ class UserProfileResponse(UserProfileBase):
     
     user_id: UUID
     user: Optional[UserResponse] = None
+
+    @field_validator('social_links', mode='before')
+    @classmethod
+    def parse_social_links(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return v
 
 class ProfileVersionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
