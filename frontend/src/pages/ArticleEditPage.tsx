@@ -39,6 +39,7 @@ import { useAllCategoriesFlat } from '../api/categories';   // we'll create this
 import { useArticleCategories, useAddArticleCategories, useRemoveArticleCategory } from '../api/articles';
 import apiClient from '../api/client';
 import type { BranchResponse } from '../api/article';
+import { preprocessTemplateSyntax } from '../utils/markdownPreprocessor';
 interface ArticleEditFormData {
   title: string;
   status: string;
@@ -60,6 +61,19 @@ const typeOptions = [
 ];
 const turndownService = new TurndownService();
 //turndownService.use(turndownGfm);
+turndownService.addRule('template', {
+  filter: (node) => node.getAttribute('data-template') !== null,
+  replacement: (content, node, options) => {
+    const el = node as HTMLElement;
+    const name = el.getAttribute('data-name') || '';
+    const paramsJson = el.getAttribute('data-params') || '{}';
+    const params = JSON.parse(paramsJson);
+    const paramStr = Object.entries(params)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('|');
+    return `{{${name}${paramStr ? '|' + paramStr : ''}}}`;
+  },
+});
 export default function ArticleEditPage() {
 
   const [conflictData, setConflictData] = useState<{
@@ -79,7 +93,7 @@ export default function ArticleEditPage() {
   const [contentError, setContentError] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const { data: article, isLoading: articleLoading, error: articleError } = useArticle(articleId!, branch);
+  const { data: article, isLoading: articleLoading, error: articleError } = useArticle(articleId!, branch, false);
   const { data: branches } = useArticleBranches(articleId!);
   const editArticleMutation = useEditArticle();
 
@@ -106,6 +120,7 @@ export default function ArticleEditPage() {
         article_type: article.article_type,
         message: `Обновление статьи "${article.title}"`,
       });
+      //const processed = preprocessTemplateSyntax(article.content);
       marked.parse(article.content, {async:true})
       .then(htmlContent=>{
         setContent(htmlContent);
@@ -143,6 +158,35 @@ export default function ArticleEditPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  const branchParam = branch !== 'main' ? `?branch=${branch}` : '';
+
+  const { data: allCategories = [], isLoading: allCatLoading } = useAllCategoriesFlat();
+  const { data: articleCategories = [], isLoading: artCatLoading } = useArticleCategories(articleId!);
+  const addCategoriesMutation = useAddArticleCategories();
+  const removeCategoryMutation = useRemoveArticleCategory();
+
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const initializedRef = useRef(false);
+
+// Initialise selectedCategoryIds only once when articleCategories first load
+  useEffect(() => {
+    if (!initializedRef.current && articleCategories && articleCategories.length > 0) {
+      setSelectedCategoryIds(articleCategories.map(c => c.id));
+      initializedRef.current = true;
+    }
+  }, [articleCategories]);
+
+  // Reset the ref if the article changes (e.g., navigating to another article)
+  useEffect(() => {
+    initializedRef.current = false;
+  }, [articleId]);
+
+  const categoryOptions = useMemo(() => {
+   return allCategories.map(cat => ({ value: cat.id, label: cat.name }));
+  }, [allCategories]);
+
+
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
@@ -293,32 +337,7 @@ export default function ArticleEditPage() {
     );
   }
 
-  const branchParam = branch !== 'main' ? `?branch=${branch}` : '';
 
- const { data: allCategories = [], isLoading: allCatLoading } = useAllCategoriesFlat();
-const { data: articleCategories = [], isLoading: artCatLoading } = useArticleCategories(articleId!);
-const addCategoriesMutation = useAddArticleCategories();
-const removeCategoryMutation = useRemoveArticleCategory();
-
-const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-const initializedRef = useRef(false);
-
-// Initialise selectedCategoryIds only once when articleCategories first load
-useEffect(() => {
-  if (!initializedRef.current && articleCategories && articleCategories.length > 0) {
-    setSelectedCategoryIds(articleCategories.map(c => c.id));
-    initializedRef.current = true;
-  }
-}, [articleCategories]);
-
-// Reset the ref if the article changes (e.g., navigating to another article)
-useEffect(() => {
-  initializedRef.current = false;
-}, [articleId]);
-
-const categoryOptions = useMemo(() => {
-  return allCategories.map(cat => ({ value: cat.id, label: cat.name }));
-}, [allCategories]);
 
 const handleCategoryChange = async (newIds: string[]) => {
   const oldIds = selectedCategoryIds;

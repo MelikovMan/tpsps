@@ -9,7 +9,11 @@ import SubScript from '@tiptap/extension-subscript';
 import { Color } from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import { Box } from '@mantine/core';
-import { forwardRef, useImperativeHandle, useEffect } from 'react';
+import { forwardRef, useImperativeHandle, useEffect, useState } from 'react';
+
+import { TemplateNode } from './extensions/TemplateNode';
+import TemplateInsertModal from './extensions/TemplateInsertModal';
+import { IconTemplate } from '@tabler/icons-react';
 
 interface RichTextEditorProps {
   content?: string;
@@ -39,6 +43,7 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Color,
         TextStyle,
+        TemplateNode,
       ],
       content,
       onUpdate: ({ editor }) => {
@@ -64,6 +69,11 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
       }
     }, [content, editor]);
 
+    const [templateModalOpened, setTemplateModalOpened] = useState(false);
+
+    const handleInsertTemplate = (name: string, params: Record<string, string>) => {
+      editor?.chain().focus().insertTemplate({ name, params }).run();
+    };
     return (
       <Box>
         <RichTextEditor editor={editor} style={{ minHeight }}>
@@ -128,9 +138,20 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
             </RichTextEditor.ControlsGroup>
 
             <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Control
+                onClick={() => setTemplateModalOpened(true)}
+                aria-label="Вставить шаблон"
+                title="Вставить шаблон"
+              >
+                <IconTemplate size="1rem" />
+              </RichTextEditor.Control>
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
               <RichTextEditor.Undo />
               <RichTextEditor.Redo />
             </RichTextEditor.ControlsGroup>
+
           </RichTextEditor.Toolbar>
 
           <RichTextEditor.Content
@@ -152,6 +173,11 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
             {error}
           </Box>
         )}
+        <TemplateInsertModal
+          opened={templateModalOpened}
+          onClose={() => setTemplateModalOpened(false)}
+          onInsert={handleInsertTemplate}
+        />
       </Box>
     );
   }

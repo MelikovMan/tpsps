@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from uuid import UUID
@@ -91,3 +91,16 @@ async def delete_template(
     if not success:
         raise HTTPException(status_code=404, detail="Template not found")
     return {"message": "Template deleted successfully"}
+
+@router.get("/render")
+async def render_template(
+    name: str = Query(..., description="Имя шаблона"),
+    db: AsyncSession = Depends(get_db),
+    **params,
+):
+    """Рендеринг шаблона с переданными параметрами"""
+    service = TemplateService(db)
+    html = await service.render_template(name, params)
+    if not html:
+        raise HTTPException(status_code=404, detail="Шаблон не найден")
+    return {"html": html}

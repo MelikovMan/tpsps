@@ -19,7 +19,9 @@ from app.schemas.article import (
     BranchResponse, BranchCreate
 )
 from app.services.commit_service import CommitService
+from app.services.template_service import TemplateService
 from app.utils.md_to_html import md_to_html
+import re
 router = APIRouter()
 
 @router.get("/", response_model=List[ArticleResponse])
@@ -51,7 +53,8 @@ async def get_articles(
 async def get_article(
     article_id: UUID,
     db: AsyncSession = Depends(get_db),
-    branch: str = Query("main", description="Branch name")
+    branch: str = Query("main", description="Branch name"),
+    render_templates: bool = Query(False) 
 ):
     # Получаем статью с ветками и текущим коммитом
     result = await db.execute(
@@ -83,6 +86,11 @@ async def get_article(
 
     if not full_content:
         raise HTTPException(status_code=404,detail="Failed to extact content of the head commit")
+    if render_templates:
+        # Поиск всех шаблонов вида {{name|key=val|...}}
+        template_service = TemplateService(db)
+        # Преобразуем Markdown с шаблонами в готовый HTML
+        full_content = await template_service.render_article_with_templates(full_content)
     
     # Формируем ответ с дополнительным полем content
     #response = ArticleResponseOne.model_validate(article)

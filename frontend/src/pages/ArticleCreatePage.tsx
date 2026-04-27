@@ -42,6 +42,19 @@ const typeOptions = [
 ];
 const turndownService = new TurndownService();
 turndownService.use(turndownGfm);
+turndownService.addRule('template', {
+  filter: (node) => node.getAttribute('data-template') !== null,
+  replacement: (content, node, options) => {
+    const el = node as HTMLElement;
+    const name = el.getAttribute('data-name') || '';
+    const paramsJson = el.getAttribute('data-params') || '{}';
+    const params = JSON.parse(paramsJson);
+    const paramStr = Object.entries(params)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('|');
+    return `{{${name}${paramStr ? '|' + paramStr : ''}}}`;
+  },
+});
 export default function ArticleCreatePage() {
   const navigate = useNavigate();
   const editorRef = useRef<RichTextEditorRef>(null);

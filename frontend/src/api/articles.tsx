@@ -29,12 +29,12 @@ export const useArticles = (params: ArticlesQueryParams = {}) => {
   });
 };
 
-export const useArticle = (articleId: string, branch: string = 'main') => {
+export const useArticle = (articleId: string, branch: string = 'main', renderTemplates: boolean = true) => {
   return useQuery({
-    queryKey: ['article', articleId, branch],
+    queryKey: ['article', articleId, branch, renderTemplates],
     queryFn: async () => {
       const response = await apiClient.get<ArticleFullResponse>(`/articles/${articleId}`, {
-        params: { branch }
+        params: { branch, render_templates: renderTemplates }
       });
       return response.data;
     },

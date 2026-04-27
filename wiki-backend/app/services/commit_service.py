@@ -205,7 +205,7 @@ class CommitService:
         if branch.name == 'main':
             from app.services.typesense_indexer import TypesenseIndexer
             indexer = TypesenseIndexer(self.db)
-            await indexer.index_article(article_id)
+            await indexer.mark_for_sync(article_id)
         
         return new_commit
 
