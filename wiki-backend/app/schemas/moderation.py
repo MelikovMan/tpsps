@@ -18,13 +18,14 @@ class ModerationCreate(BaseModel):
 class ModerationUpdate(BaseModel):
     status: Optional[str] = None
     comment: Optional[str] = None
+    revert_commit: bool = False 
 
 class ModerationResponse(ModerationBase):
     model_config = ConfigDict(from_attributes=True)
     
     id: UUID
     commit_id: UUID
-    reported_by: UUID
+    reported_by_id: UUID
     moderated_by: Optional[UUID] = None
     created_at: datetime
     moderated_at: Optional[datetime] = None
