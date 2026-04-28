@@ -232,6 +232,7 @@ export const useCreateCommit = () => {
       if (variables.commitData.branch_id) {
         queryClient.invalidateQueries({ queryKey: ['commits', 'branch', variables.commitData.branch_id] });
       }
+      
     },
   });
 };

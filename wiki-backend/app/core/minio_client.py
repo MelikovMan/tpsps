@@ -3,7 +3,7 @@ from minio import Minio
 from minio.error import S3Error
 from app.core.config import settings
 import logging
-
+import io
 logger = logging.getLogger(__name__)
 
 class MinIOClient:
@@ -29,8 +29,12 @@ class MinIOClient:
             return False
     
     def upload_file(self, bucket_name: str, object_name: str, file_data, 
-                   file_size: int, content_type: str):
+                    file_size: int, content_type: str):
         """Загружает файл в MinIO"""
+        # Преобразуем bytes в BytesIO для совместимости
+        if isinstance(file_data, bytes):
+            file_data = io.BytesIO(file_data)
+
         try:
             result = self.client.put_object(
                 bucket_name=bucket_name,

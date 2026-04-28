@@ -28,6 +28,8 @@ const CommitsHistoryPage = lazy(() => import('../pages/CommitHistoryPage'));
 const BranchesPage = lazy(() => import('../pages/BranchesPage'));
 const MediaUploadPage = lazy(() => import('../pages/MediaUploadPage'));
 
+const MediaListPage = lazy(() => import('../pages/MediaListPage'));
+
 
 export default function Router() {
   const location = useLocation();
@@ -106,6 +108,11 @@ export default function Router() {
               <AdminPage />
             </RequireAuth>
           } />
+          <Route path="media" element={
+            <RequireAuth requiredPermissions={['can_edit']}>
+              <MediaListPage />
+            </RequireAuth>
+}          />
             <Route path="media/upload" element={
               <RequireAuth requiredPermissions={['can_edit']}>
                 <MediaUploadPage />
