@@ -9,6 +9,7 @@ from .media import Media, commit_media_association, article_media_association
 from .template import Template
 from .permission import Permission
 from .branch_tag import BranchTag,BranchAccess,BranchTagPermission
+from .search_sync_table import SearchSyncQueue
 
 __all__ = [
     "User", "UserProfile", "ProfileVersion",
@@ -17,5 +18,6 @@ __all__ = [
     "Tag", "TagPermission",
     "Moderation", "Comment", "Media", "Template", "Permission",
     "BranchTag","BranchAccess","BranchTagPermission", "ArticleFull",
-    "commit_media_association", "article_media_association"
+    "commit_media_association", "article_media_association",
+    "SearchSyncQueue"
 ]

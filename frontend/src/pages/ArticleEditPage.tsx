@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Container,
@@ -29,11 +29,17 @@ import {
   IconAlertCircle 
 } from '@tabler/icons-react';
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
-import { useArticle, useEditArticle, useArticleBranches } from '../api/articles';
+import { useArticle, useEditArticle, useArticleBranches, useCreateBranchFromCommit } from '../api/articles';
 import TurndownService from 'turndown';
 import MarkdownRenderer, { MemoizedMarkdown } from '../components/MarkdownRenderer';
 //import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
 import { marked } from 'marked';
+import { MultiSelect, Loader } from '@mantine/core';
+import { useAllCategoriesFlat } from '../api/categories';   // we'll create this hook
+import { useArticleCategories, useAddArticleCategories, useRemoveArticleCategory } from '../api/articles';
+import apiClient from '../api/client';
+import type { BranchResponse } from '../api/article';
+import { preprocessTemplateSyntax } from '../utils/markdownPreprocessor';
 interface ArticleEditFormData {
   title: string;
   status: string;
@@ -55,7 +61,28 @@ const typeOptions = [
 ];
 const turndownService = new TurndownService();
 //turndownService.use(turndownGfm);
+turndownService.addRule('template', {
+  filter: (node) => node.getAttribute('data-template') !== null,
+  replacement: (content, node, options) => {
+    const el = node as HTMLElement;
+    const name = el.getAttribute('data-name') || '';
+    const paramsJson = el.getAttribute('data-params') || '{}';
+    const params = JSON.parse(paramsJson);
+    const paramStr = Object.entries(params)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('|');
+    return `{{${name}${paramStr ? '|' + paramStr : ''}}}`;
+  },
+});
 export default function ArticleEditPage() {
+
+  const [conflictData, setConflictData] = useState<{
+  message: string;
+  currentHeadCommitId?: string;
+} | null>(null);
+
+  const createBranchFromCommitMutation = useCreateBranchFromCommit();
+
   const navigate = useNavigate();
   const { articleId } = useParams<{ articleId: string }>();
   const [searchParams] = useSearchParams();
@@ -66,7 +93,7 @@ export default function ArticleEditPage() {
   const [contentError, setContentError] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const { data: article, isLoading: articleLoading, error: articleError } = useArticle(articleId!, branch);
+  const { data: article, isLoading: articleLoading, error: articleError } = useArticle(articleId!, branch, false);
   const { data: branches } = useArticleBranches(articleId!);
   const editArticleMutation = useEditArticle();
 
@@ -93,6 +120,7 @@ export default function ArticleEditPage() {
         article_type: article.article_type,
         message: `Обновление статьи "${article.title}"`,
       });
+      //const processed = preprocessTemplateSyntax(article.content);
       marked.parse(article.content, {async:true})
       .then(htmlContent=>{
         setContent(htmlContent);
@@ -130,6 +158,35 @@ export default function ArticleEditPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  const branchParam = branch !== 'main' ? `?branch=${branch}` : '';
+
+  const { data: allCategories = [], isLoading: allCatLoading } = useAllCategoriesFlat();
+  const { data: articleCategories = [], isLoading: artCatLoading } = useArticleCategories(articleId!);
+  const addCategoriesMutation = useAddArticleCategories();
+  const removeCategoryMutation = useRemoveArticleCategory();
+
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const initializedRef = useRef(false);
+
+// Initialise selectedCategoryIds only once when articleCategories first load
+  useEffect(() => {
+    if (!initializedRef.current && articleCategories && articleCategories.length > 0) {
+      setSelectedCategoryIds(articleCategories.map(c => c.id));
+      initializedRef.current = true;
+    }
+  }, [articleCategories]);
+
+  // Reset the ref if the article changes (e.g., navigating to another article)
+  useEffect(() => {
+    initializedRef.current = false;
+  }, [articleId]);
+
+  const categoryOptions = useMemo(() => {
+   return allCategories.map(cat => ({ value: cat.id, label: cat.name }));
+  }, [allCategories]);
+
+
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
@@ -177,6 +234,25 @@ export default function ArticleEditPage() {
       const branchParam = branch !== 'main' ? `?branch=${branch}` : '';
       navigate(`/articles/${articleId}${branchParam}`);
     } catch (error: any) {
+      if (error.response?.status === 409) {
+          let headCommitId: string | undefined;
+          try {
+            // Get the current head commit of the branch
+            const branchResponse = await apiClient.get<BranchResponse>(
+              `/branches/article/${articleId}/by-name/${branch}`
+          );
+          headCommitId = branchResponse.data.head_commit_id;
+          } catch {
+          // ignore fetch error, show without commit id
+          }
+          setConflictData({
+            message: error.response.data?.detail || 'Конфликт: ветка была обновлена другим пользователем.',
+            currentHeadCommitId: headCommitId,
+          });
+          return; // Stop here, no generic error notification
+    }
+
+    // Other errors
       console.error('Error updating article:', error);
       
       const errorMessage = error?.response?.data?.detail || 
@@ -261,8 +337,33 @@ export default function ArticleEditPage() {
     );
   }
 
-  const branchParam = branch !== 'main' ? `?branch=${branch}` : '';
 
+
+const handleCategoryChange = async (newIds: string[]) => {
+  const oldIds = selectedCategoryIds;
+  const added = newIds.filter(id => !oldIds.includes(id));
+  const removed = oldIds.filter(id => !newIds.includes(id));
+
+  // Optimistically update UI
+  setSelectedCategoryIds(newIds);
+
+  try {
+    if (added.length > 0) {
+      await addCategoriesMutation.mutateAsync({ articleId: articleId!, categoryIds: added });
+    }
+    if (removed.length > 0) {
+      // Remove one at a time; alternatively batch them
+      for (const id of removed) {
+        await removeCategoryMutation.mutateAsync({ articleId: articleId!, categoryId: id });
+      }
+    }
+    notifications.show({ message: 'Категории обновлены', color: 'green' });
+  } catch (error) {
+    // Revert on error
+    setSelectedCategoryIds(oldIds);
+    notifications.show({ title: 'Ошибка', message: 'Не удалось обновить категории', color: 'red' });
+  }
+};
   return (
     <Container size="lg" py="xl">
       <Paper shadow="sm" radius="md" p="xl" pos="relative">
@@ -311,7 +412,56 @@ export default function ArticleEditPage() {
             Вы редактируете статью в ветке "{branch}". Изменения будут сохранены в эту ветку.
           </Alert>
         )}
-
+        {conflictData && (
+      <Alert
+        color="red"
+        title="Конфликт версий"
+        icon={<IconAlertCircle size={16} />}
+        mb="md"
+      >
+        <Text>{conflictData.message}</Text>
+        <Group mt="md">
+          <Button
+            color="blue"
+            onClick={async () => {
+              if (!conflictData.currentHeadCommitId) return;
+              try {
+                const branchName = `${branch}-conflict-${Date.now()}`;
+                await createBranchFromCommitMutation.mutateAsync({
+                  articleId: articleId!,
+                  branchData: {
+                    name: branchName,
+                    source_commit_id: conflictData.currentHeadCommitId,
+                    description: `Ветка для разрешения конфликта из ${branch}`,
+                },
+              });
+                navigate(`/articles/${articleId}/edit?branch=${encodeURIComponent(branchName)}`);
+                setConflictData(null);
+          }  catch (err) {
+                notifications.show({
+                  title: 'Ошибка',
+                  message: 'Не удалось создать ветку',
+                  color: 'red',
+                });
+              }
+            }}
+            disabled={!conflictData.currentHeadCommitId}
+            >
+              Создать новую ветку из текущей версии
+            </Button>
+            <Button
+              variant="light"
+              color="gray"
+              onClick={() => {
+                setConflictData(null);
+                navigate(`/articles/${articleId}?branch=${branch}`);
+            }}
+              >
+              Отменить изменения и вернуться к статье
+            </Button>
+          </Group>
+        </Alert>
+        )}
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="md">
             <TextInput
@@ -354,7 +504,18 @@ export default function ArticleEditPage() {
               required
               {...form.getInputProps('message')}
             />
-
+            {(allCatLoading || artCatLoading) ? <Loader size="sm" /> : (
+              <MultiSelect
+              label="Категории"
+                placeholder="Выберите категории"
+              data={categoryOptions}
+              value={selectedCategoryIds}
+              onChange={handleCategoryChange}
+              searchable
+              clearable
+              nothingFoundMessage="Категории не найдены"
+            />
+)}
             <Group justify="flex-end" mt="xl">
               <Button
                 variant="subtle"

@@ -50,16 +50,25 @@ class ModerationService:
         query = select(Moderation).where(Moderation.id == moderation_id)
         result = await self.db.execute(query)
         moderation = result.scalar_one_or_none()
-        
         if not moderation:
             return None
         
         update_data = moderation_data.model_dump(exclude_unset=True)
+        revert_commit = update_data.pop("revert_commit", False)
         for field, value in update_data.items():
             setattr(moderation, field, value)
         
         moderation.moderated_by = moderator_id
         moderation.moderated_at = datetime.utcnow()
+
+        if revert_commit:
+            from app.services.commit_service import CommitService
+            commit_service = CommitService(self.db)
+            reverted = await commit_service.revert_commit(moderation.commit_id, moderator_id)
+            if not reverted:
+                # если откат не удался – можно выбросить ошибку или проигнорировать
+                await self.db.rollback()
+                raise ValueError("Failed to revert the commit")
         
         await self.db.commit()
         await self.db.refresh(moderation)

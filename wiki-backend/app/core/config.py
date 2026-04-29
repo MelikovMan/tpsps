@@ -1,6 +1,7 @@
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 from typing import List
+from app.core.enums import SearchEngineType
 import os
 
 class Settings(BaseSettings):
@@ -46,7 +47,19 @@ class Settings(BaseSettings):
     MINIO_DEFAULT_BUCKET: str = Field("media-files", alias="MINIO_DEFAULT_BUCKET")
     minio_public_url: str = Field("http://localhost:9000", alias="MINIO_PUBLIC_URL")
 
+    SEARCH_ENGINE: SearchEngineType = Field(SearchEngineType.POSTGRES, env="SEARCH_ENGINE")
+    TYPESENSE_HOST: str = Field(...,alias="TYPESENSE_HOST")
+    TYPESENSE_PORT: int = Field(...,alias="TYPESENSE_PORT")
+    TYPESENSE_API_KEY: str = Field(...,alias="TYPESENSE_API_KEY")
+    TYPESENSE_EMBEDDING_MODEL: str = Field("ts/multilingual-e5-base", env="TYPESENSE_EMBEDDING_MODEL")
 
+    # Vandalism Detection
+    VANDALISM_CHECK_URL: str = Field(
+        "http://localhost:8010/models/vandalism/", alias="VANDALISM_CHECK_URL"
+    )
+    ENABLE_VANDALISM_CHECK: bool = Field(False, alias="ENABLE_VANDALISM_CHECK")
+    VANDALISM_REVERT_THRESHOLD: float = Field(0.8, alias="VANDALISM_REVERT_THRESHOLD")
+    VANDALISM_MODERATION_THRESHOLD: float = Field(0.6, alias="VANDALISM_MODERATION_THRESHOLD")
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'

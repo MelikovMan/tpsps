@@ -40,9 +40,16 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    moderations = relationship(
-        "Moderation", 
+    moderations_as_moderator = relationship(
+        "Moderation",
+        foreign_keys="[Moderation.moderator_id]",
         back_populates="moderator",
+        cascade="all, delete-orphan"
+    )
+    moderations_as_reporter = relationship(
+        "Moderation",
+        foreign_keys="[Moderation.reported_by_id]",
+        back_populates="reporter",
         cascade="all, delete-orphan"
     )
     permission = relationship("Permission")

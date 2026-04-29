@@ -13,11 +13,76 @@ from app.models.user import User
 from app.schemas.article import CommitResponse, CommitCreateInternal, CommitResponseDetailed, DiffResponse
 import whatthepatch
 import logging
+import httpx
+from app.models.moderation import Moderation
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 class CommitService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.vandalism_check_url = "http://localhost:8010/models/vandalism/"
+
+
+    async def _check_vandalism(self, added_text: str, removed_text: str) -> Tuple[float, bool]:
+        """
+        Проверить правку на вандализм с помощью нейросетевой модели.
+        Возвращает (confidence, is_vandalism).
+        """
+        if not settings.ENABLE_VANDALISM_CHECK:
+            return 0, False
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    settings.VANDALISM_CHECK_URL,
+                    json={"added_text": added_text, "removed_text": removed_text}
+                )
+
+                if response.status_code == 200:
+                    result = response.json()
+                    confidence = result.get("confidence", 0)
+                    predicted_class = result.get("predicted_class", 0)
+                    is_vandalism = predicted_class == 1
+                    return confidence, is_vandalism
+                else:
+                    logger.warning(
+                        f"Vandalism check service returned status {response.status_code}"
+                    )
+                    return 0, False
+        except Exception as e:
+            logger.warning(f"Error checking vandalism: {e}")
+            return 0, False
+
+    def _extract_added_removed_from_diff(self, diff_content: str) -> Tuple[str, str]:
+        """
+        Извлечь добавленный и удаленный текст из diff
+        
+        Args:
+            diff_content: Строка diff в формате unified diff
+            
+        Returns:
+            tuple: (added_text, removed_text)
+        """
+        added_lines = []
+        removed_lines = []
+        
+        for line in diff_content.splitlines():
+            # Пропускаем заголовки
+            if line.startswith('---') or line.startswith('+++') or line.startswith('@@'):
+                continue
+            
+            # Добавленные строки
+            if line.startswith('+') and not line.startswith('++'):
+                added_lines.append(line[1:])
+            # Удаленные строки
+            elif line.startswith('-') and not line.startswith('--'):
+                removed_lines.append(line[1:])
+        
+        added_text = '\n'.join(added_lines)
+        removed_text = '\n'.join(removed_lines)
+        
+        return added_text, removed_text
 
     async def get_article_commits(self, article_id: UUID, skip: int = 0, limit: int = 50) -> List[Commit]:
         """Get all commits for a specific article"""
@@ -104,7 +169,8 @@ class CommitService:
         author_id: UUID, 
         message: str, 
         content: str,
-        branch_id: Optional[UUID] = None
+        branch_id: Optional[UUID] = None,
+        base_commit_id: Optional[UUID] = None
     ) -> Commit:
         """Create a new commit in specified branch or main branch"""
         
@@ -125,6 +191,13 @@ class CommitService:
             
             if not branch:
                 raise ValueError("Branch not found")
+
+            if branch.head_commit_id != base_commit_id:
+                raise ValueError(
+                    f"Conflict: branch '{branch.name}' has been updated since you started editing. "
+                    f"Your base commit {base_commit_id} is not the current head ({branch.head_commit_id}). "
+                    "Please create a new branch from the current head or discard your changes."
+                )
         
         # Get previous commit to create diff
         previous_commit = None
@@ -150,6 +223,21 @@ class CommitService:
         else:
             content_diff = content  # First commit
         
+
+        needs_moderation = False
+        if previous_commit:
+            # Извлекаем добавленный и удаленный текст из diff
+            added_text, removed_text = self._extract_added_removed_from_diff(content_diff)
+            
+            # Проверяем через нейросетевую модель
+            confidence, is_vandalism = await self._check_vandalism(added_text, removed_text)
+            
+            if is_vandalism:
+                if confidence > settings.VANDALISM_REVERT_THRESHOLD:  # Более 80% уверенности - откатываем
+                    raise ValueError(f"Правка отклонена: высокий риск вандализма (уверенность: {confidence:.2%})")
+                elif confidence > settings.VANDALISM_MODERATION_THRESHOLD:  # Более 60% - отправляем на модерацию
+                    needs_moderation = True
+                    
         # Create new commit
         new_commit = Commit(
             article_id=article_id,
@@ -192,8 +280,22 @@ class CommitService:
         )
         self.db.add(full_content)
 
+        if needs_moderation:
+            moderation = Moderation(
+                commit_id=new_commit.id,
+                reason="Автоматическая проверка на вандализм.",
+                description=f"Правка требует проверки модератора. Уверенность модели: {confidence:.2%}",
+                reported_by_id=author_id,  # Автор коммита также является репортером
+                status="pending"
+            )
+            self.db.add(moderation)
+
         await self.db.commit()
         await self.db.refresh(new_commit)
+        if branch.name == 'main':
+            from app.services.typesense_indexer import TypesenseIndexer
+            indexer = TypesenseIndexer(self.db)
+            await indexer.mark_for_sync(article_id)
         
         return new_commit
 

@@ -10,6 +10,7 @@ import ArticleNavigation from '../components/ArticleNavigation';
 import CommentsSection from '../components/CommentSection';
 
 import { MemoizedMarkdown } from '../components/MarkdownRenderer';
+import DOMPurify from 'dompurify';
 
 export default function ArticlePage() {
   const { id: articleId } = useParams<{ id: string }>();
@@ -137,7 +138,11 @@ export default function ArticlePage() {
 
             <Tabs.Panel value="content">
               <Card withBorder p="xl" radius="md">
-                <MemoizedMarkdown content={article.content}/>
+                  <div
+                    dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(article.content)
+                  }}
+              />
               </Card>
               
               {currentBranch && currentBranch.name !== 'main' && (

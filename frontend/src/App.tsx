@@ -8,6 +8,7 @@ import '@mantine/carousel/styles.css';
 import '@mantine/tiptap/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/dropzone/styles.css';
+import '@mantine/notifications/styles.css';
 export const mantineHtmlProps = {
   suppressHydrationWarning: true,
   'data-mantine-color-scheme': 'light',
@@ -20,6 +21,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -32,7 +34,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <MantineProvider>{children}</MantineProvider>
+        <MantineProvider>
+          {children}
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -53,6 +57,7 @@ function App() {
       withCssVariables
       >
         <MantineEmotionProvider>
+          <Notifications />
           <BrowserRouter>
             <Router/>
           </BrowserRouter>

@@ -20,6 +20,7 @@ class ArticleUpdate(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
     message: str = "Update article"
+    base_commit_id: Optional[UUID] = None
 
 
 class ArticleResponse(ArticleBase):
@@ -49,6 +50,7 @@ class CommitCreate(BaseModel):
     message: str
     content: str  
     branch_id: Optional[UUID] = None  
+    base_commit_id: Optional[UUID] = None
 
 
 class CommitCreateInternal(CommitBase):

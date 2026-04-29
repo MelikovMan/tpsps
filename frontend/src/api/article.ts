@@ -69,6 +69,7 @@ export interface CommitCreate {
   message: string;
   content: string;
   branch_id?: string;
+  base_commit_id?: string;
 }
 
 export interface DiffResponse {
@@ -104,4 +105,22 @@ export interface ArticleEditCommit {
   message: string;
   content: string;
   branch?: string; // Имя ветки, если не указано - используется текущая ветка
+}
+
+export interface SearchResultItem {
+  id: string;
+  title: string;
+  snippet: string | null;   // HTML с <mark> тегами
+  created_at: string;
+  updated_at: string;
+  rank_content?: number;
+  sim_title?: number;
+}
+
+export interface SearchResponse {
+  query: string;
+  language: string | null;
+  fields: string;
+  total: number;
+  results: SearchResultItem[];
 }

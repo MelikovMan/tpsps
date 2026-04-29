@@ -64,6 +64,7 @@ from .tag import (
 from .template import (
     TemplateBase, TemplateCreate, TemplateUpdate, TemplateResponse
 )
+from .search import (SearchQueryParams, SearchResponse, SearchResultItem)
 
 __all__ = [
     # User schemas
@@ -108,4 +109,6 @@ __all__ = [
     
     # Template schemas
     "TemplateBase", "TemplateCreate", "TemplateUpdate", "TemplateResponse",
+
+    "SearchQueryParams", "SearchResponse", "SearchResultItem"
 ]

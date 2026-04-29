@@ -33,6 +33,7 @@ class Article(Base):
         back_populates="articles"
     )
     comments = relationship("Comment", back_populates="article")
+    sync_queue_items = relationship("SearchSyncQueue", back_populates="article", cascade="all, delete-orphan")
 
 class Commit(Base):
     __tablename__ = "commits"

@@ -69,10 +69,13 @@ async def create_commit(
             author_id=current_user.id,
             message=commit_data.message,
             content=commit_data.content,
-            branch_id=commit_data.branch_id
+            branch_id=commit_data.branch_id,
+            base_commit_id=commit_data.base_commit_id 
         )
         return CommitResponse.model_validate(new_commit)
     except ValueError as e:
+        if str(e).startswith("Conflict:"):
+            raise HTTPException(status_code=409, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
 
 

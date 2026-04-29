@@ -1,8 +1,33 @@
+import asyncio
 from fastapi import FastAPI, logger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.core.database import AsyncSessionLocal
+
+from app.core.typesense_client import typesense_client
+from app.services.typesense_sync_worker import TypesenseSyncWorker
+import typesense.exceptions
+
+def ensure_typesense_collection():
+    schema = {
+        'name': 'articles',
+        'fields': [
+            {'name': 'id', 'type': 'string'},
+            {'name': 'title', 'type': 'string'},
+            {'name': 'content', 'type': 'string'},
+            {'name': 'language', 'type': 'string', 'facet': True},
+            {'name': 'created_at', 'type': 'int64'},
+            {'name': 'updated_at', 'type': 'int64'},
+        ],
+        'default_sorting_field': 'updated_at'
+    }
+
+    try:
+        typesense_client.collections.create(schema)
+    except typesense.exceptions.ObjectAlreadyExists:
+        # коллекция уже существует
+        pass
 async def check_database_connection():
     try:
         async with AsyncSessionLocal() as session:
@@ -35,10 +60,17 @@ app.add_middleware(
 async def startup_event():
     await init_redis_cache()
     success = await check_database_connection()
+    print(f"Search engine is:{settings.SEARCH_ENGINE}")
+    await typesense_client.initialize()
+    sync_worker = TypesenseSyncWorker(interval_seconds=60)
+    asyncio.create_task(sync_worker.run())
     if not success:
         raise Exception("Failed to connect to database")
     
 # Static files
+@app.on_event("shutdown")
+async def shutdown_event():
+    await typesense_client.close()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # API Router

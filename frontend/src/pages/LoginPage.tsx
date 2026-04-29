@@ -16,7 +16,7 @@ export default function LoginPage() {
   const theme = useMantineTheme();
   const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
   const from = location.state?.from?.pathname || '/';
-
+  console.log(isAuthenticated)
   const form = useForm({
     initialValues: {
       username: '',
