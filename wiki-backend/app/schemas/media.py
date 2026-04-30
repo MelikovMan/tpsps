@@ -36,3 +36,11 @@ class ArticleReference(BaseModel):
 class CommitReference(BaseModel):
     id: UUID
     message: str
+
+# app/schemas/media.py (фрагмент)
+
+class MediaListResponse(BaseModel):
+    data: List[MediaResponse]
+    total: int
+    page: Optional[int] = None
+    pages: Optional[int] = None

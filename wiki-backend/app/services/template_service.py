@@ -109,7 +109,7 @@ class TemplateService:
         return f'<div class="template-rendered" data-template-name="{name}">{html}</div>'
 
     def _render_error_placeholder(self, name: str) -> str:
-        return f'<div class="template-error">⚠️ Шаблон «{name}» не найден</div>'
+        return f'<div class="template-error">Шаблон «{name}» не найден</div>'
     
     async def render_article_with_templates(self, markdown_text: str) -> str:
         """Заменяет шаблоны в Markdown на готовый HTML и возвращает итоговый HTML."""
