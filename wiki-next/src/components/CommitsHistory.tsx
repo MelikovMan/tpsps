@@ -11,8 +11,10 @@ import {
   IconUser, IconCalendar, IconGitCommit, IconGitMerge, IconRestore, IconEye,
   IconCode, IconChevronDown, IconChevronUp, IconDots
 } from '@tabler/icons-react';
-import { getArticleBranches, getArticleCommits, getBranchCommits, getCommitDetailed, getCommitDiff, revertCommit } from '@/lib/api/branches';
+import { branchesApi } from '@/lib/api/branches';
+import { commitsApi } from '@/lib/api/commits';
 import type { CommitResponse, CommitResponseDetailed, DiffResponse } from '@/lib/api/types/article';
+import { revertCommit } from '@/app/actions/commits';
 
 interface CommitsHistoryProps {
   articleId: string;
@@ -34,7 +36,8 @@ export default function CommitsHistory({ articleId, selectedBranchId, initialCom
 
   // Загрузка списка веток для выбора
   useEffect(() => {
-    getArticleBranches(articleId)
+    
+    branchesApi.getByArticle(articleId)
       .then(setBranches)
       .catch(() => notifications.show({ title: 'Ошибка', message: 'Не удалось загрузить ветки', color: 'red' }));
   }, [articleId]);
@@ -46,10 +49,10 @@ export default function CommitsHistory({ articleId, selectedBranchId, initialCom
       try {
         const skip = (page - 1) * limit;
         if (viewMode === 'branch' && branchId) {
-          const data = await getBranchCommits(branchId, skip, limit);
+          const data = await commitsApi.getByBranch(branchId, skip, limit);
           setCommits(data);
         } else {
-          const data = await getArticleCommits(articleId, skip, limit);
+          const data = await commitsApi.getByArticle(articleId, skip, limit);
           setCommits(data);
         }
       } catch (error) {
@@ -67,7 +70,7 @@ export default function CommitsHistory({ articleId, selectedBranchId, initialCom
 
   const handleRevert = async (commitId: string) => {
     try {
-      await revertCommit(commitId);
+      await revertCommit(commitId, articleId);
       notifications.show({ title: 'Успех', message: 'Коммит отменён', color: 'green' });
       // обновить список коммитов
     } catch (err: any) {
@@ -173,7 +176,7 @@ function CommitDetailsContent({ commit }: { commit: CommitResponse }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getCommitDetailed(commit.id), getCommitDiff(commit.id)])
+    Promise.all([commitsApi.getDetailed(commit.id), commitsApi.getDetailed(commit.id)])
       .then(([det, dif]) => {
         setDetails(det);
         setDiff(dif);
