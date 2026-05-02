@@ -10,6 +10,8 @@ services:
       interval: 30s
       timeout: 2s
       retries: 3
+    networks:
+      - wiki-network
   typesense:
     image: typesense/typesense:30.1
     ports:
@@ -52,7 +54,7 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - CORS_ORIGINS='["http://localhost:3000", "http://127.0.0.1:3000"]'
-      - TYPESENSE_HOST=localhost
+      - TYPESENSE_HOST=typesense
       - TYPESENSE_PORT=8108
       - TYPESENSE_API_KEY=xyz123
       - SEARCH_ENGINE=typesense  
@@ -117,6 +119,8 @@ services:
       /usr/bin/mc policy set public myminio/media-files;
       echo 'MinIO setup completed';
       "
+    networks:
+      - wiki-network
 
 volumes:
   postgres_data:
