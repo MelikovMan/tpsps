@@ -27,24 +27,22 @@ export async function login(
       return { error: errorData.detail || 'Неверное имя пользователя или пароль' };
     }
 
-    // Бэкенд возвращает access_token и устанавливает httpOnly cookie
     const data = await response.json();
     const setCookieHeader = response.headers.get('set-cookie');
 
     if (setCookieHeader) {
-      // Передаём куку клиенту через Next.js cookies API
       const cookieStore = await cookies();
       const cookieNameValue = setCookieHeader.split(';')[0].split('=');
       cookieStore.set(cookieNameValue[0], cookieNameValue[1], {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 1 неделя
+        maxAge: 60 * 60 * 24 * 7, 
         path: '/',
       });
     }
 
-    redirect('/'); // Успех — идём на главную
+    redirect('/'); 
   } catch (e) {
     return { error: 'Ошибка сети. Попробуйте позже.' };
   }

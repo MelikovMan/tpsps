@@ -1,7 +1,7 @@
 // context/AuthContext.tsx
 'use client';
 import React, { createContext, useContext } from 'react';
-import type { UserResponse, PermissionResponse } from '@/types';
+import type { UserResponse, PermissionResponse } from '@/lib/api/types/types';
 
 interface AuthContextType {
   user: UserResponse | null;

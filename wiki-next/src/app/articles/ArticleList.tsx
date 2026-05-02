@@ -8,7 +8,7 @@ import {
 import { IconSearch, IconLanguage, IconListSearch } from '@tabler/icons-react';
 import Link from 'next/link';
 import { api } from '@/lib/api/client';
-import type { ArticleResponse, SearchResponse } from '@/lib/api/types/article'; // подставьте правильный путь
+import type { ArticleResponse, SearchResponse } from '@/lib/api/types/article'; 
 
 const ARTICLE_STATUSES = [
   { value: 'draft', label: 'Черновик' },
@@ -18,7 +18,6 @@ const ARTICLE_STATUSES = [
 
 const SEARCH_LIMIT = 10;
 
-// Простые стили (замена useStyles)
 const styles = {
   card: {
     cursor: 'pointer',
