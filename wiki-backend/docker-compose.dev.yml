@@ -26,6 +26,7 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
+      BACKUP_TEMP_DIR: /tmp/wiki_backups
     restart: unless-stopped
     deploy:
       resources:
@@ -37,6 +38,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    volumes:
+    - backup_temp:/tmp/wiki_backups
   neunets:
     build: ../neunet_service
     ports:
@@ -127,3 +130,9 @@ volumes:
   postgres_data:
   minio_data:
   typesense_data:
+  backup_temp:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=10G,mode=1777
