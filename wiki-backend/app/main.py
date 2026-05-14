@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.core.database import AsyncSessionLocal
+from app.core.middleware import MaintenanceMiddleware
+
 
 from app.core.typesense_client import typesense_client
 from app.services.typesense_sync_worker import TypesenseSyncWorker
@@ -56,6 +58,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(MaintenanceMiddleware)
 @app.on_event("startup")
 async def startup_event():
     await init_redis_cache()
