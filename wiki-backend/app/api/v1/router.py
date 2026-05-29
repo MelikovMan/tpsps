@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     articles, auth, users, comments,
     tags, media, templates, moderation, permissions,
-    branches, commits, search, category
+    branches, commits, search, category, backup
 )
 
 api_router = APIRouter()
@@ -23,4 +23,6 @@ api_router.include_router(permissions.router, prefix="/permissions", tags=["perm
 api_router.include_router(branches.router, prefix="/branches", tags=["branches"])
 api_router.include_router(commits.router, prefix="/commits", tags=["commits"])
 api_router.include_router(search.router, prefix="/search", tags=["search"])
+
+api_router.include_router(backup.router, prefix="/backup")
 

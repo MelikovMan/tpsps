@@ -91,6 +91,55 @@ class TypesenseSyncWorker:
                 )
                 await db.commit()
 
+
+    async def reindex_all(self):
+        """
+        Полная переиндексация всех статей:
+        - удаляет коллекцию Typesense и создаёт заново,
+        - загружает все опубликованные статьи из БД,
+        - отправляет их в Typesense пакетами,
+        - очищает очередь синхронизации.
+        """
+        async with AsyncSessionLocal() as db:
+            # 1. Удаляем коллекцию, если существует
+            client = typesense_client.get_client()
+            try:
+                await client.collections['articles'].delete()
+            except Exception:
+                pass
+
+            # 2. Создаём коллекцию заново (со схемой и эмбеддингами)
+            from app.core.typesense_client import ensure_typesense_collection
+            await ensure_typesense_collection()
+
+            # 3. Получаем все опубликованные статьи
+            from app.models.article import Article
+            stmt = select(Article.id).where(Article.status == 'published')
+            result = await db.execute(stmt)
+            article_ids = result.scalars().all()
+
+            # 4. Собираем документы
+            documents = []
+            for article_id in article_ids:
+                doc = await self._get_article_document(db, article_id)
+                if doc:
+                    documents.append(doc)
+
+            # 5. Загружаем пачками
+            batch_size = 100
+            for i in range(0, len(documents), batch_size):
+                batch = documents[i:i + batch_size]
+                try:
+                    await client.collections['articles'].documents.import_(
+                        batch, {'action': 'upsert'}
+                    )
+                except Exception as e:
+                    print(f"Bulk import error: {e}")
+
+            # 6. Очищаем очередь синхронизации
+            await db.execute(delete(SearchSyncQueue))
+            await db.commit()
+
     async def _get_article_document(self, db: AsyncSession, article_id: UUID) -> dict | None:
         # Получаем статью и её содержимое
         from app.models.article import Article, Branch, ArticleFull

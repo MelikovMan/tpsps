@@ -66,4 +66,11 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 
+    # app/core/config.py (добавить в класс Settings)
+    # Backup
+    BACKUP_BUCKET: str = Field("backups", alias="BACKUP_BUCKET")
+    BACKUP_TEMP_DIR: str = Field("/tmp/wiki_backups", alias="BACKUP_TEMP_DIR")
+    BACKUP_RETENTION_DAYS: int = Field(30, alias="BACKUP_RETENTION_DAYS")
+
+
 settings = Settings()

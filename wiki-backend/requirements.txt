@@ -24,4 +24,5 @@ mistune==3.1.2
 bleach==6.2.0
 whatthepatch
 faker
-langdetect 
+langdetect
+streaq

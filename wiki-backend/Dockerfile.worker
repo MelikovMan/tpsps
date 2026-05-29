@@ -1,0 +1,42 @@
+# Dockerfile.worker
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+# Установка системных зависимостей, необходимых для pg_dump/pg_restore и компиляции некоторых пакетов
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копируем только файл с зависимостями (улучшает кэширование слоёв)
+COPY requirements-worker.txt .
+
+# Установка Python-пакетов в отдельную директорию (для возможности multi-stage)
+RUN pip install --no-cache-dir --user -r requirements-worker.txt
+
+# Финальный этап – минимальный образ
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Копируем установленные пакеты из builder'а
+COPY --from=builder /root/.local /root/.local
+# Копируем клиент PostgreSQL (pg_dump, pg_restore) из builder'а
+COPY --from=builder /usr/bin/pg_dump /usr/bin/pg_dump
+COPY --from=builder /usr/bin/pg_restore /usr/bin/pg_restore
+COPY --from=builder /usr/bin/psql /usr/bin/psql
+# Копируем разделяемые библиотеки PostgreSQL (если нужны)
+COPY --from=builder /usr/lib/postgresql/*/lib/* /usr/lib/
+
+# Убедимся, что путь включает пользовательские библиотеки
+ENV PATH=/root/.local/bin:$PATH
+
+# Копируем исходный код приложения (только то, что нужно воркеру)
+COPY app/ ./app/
+# При необходимости – копируем статические файлы или конфиги
+# COPY static/ ./static/
+
+# Команда запуска воркера streaq
+CMD ["streaq", "run", "app.tasks.worker:worker"]
