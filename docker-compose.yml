@@ -32,7 +32,7 @@ services:
 
   frontend:
     build: 
-      context: ./wiki-next
+      context: ./frontend
       args:
          NEXT_PUBLIC_API_URL: http://backend:8000/api/v1   
     ports:
@@ -57,7 +57,8 @@ services:
       - TYPESENSE_HOST=typesense
       - TYPESENSE_PORT=8108
       - TYPESENSE_API_KEY=xyz123
-      - SEARCH_ENGINE=typesense  
+      - SEARCH_ENGINE=typesense
+      - VANDALISM_CHECK_URL=http://neunets:8010/models/vandalism/"
     depends_on:
       postgres:
         condition: service_healthy
