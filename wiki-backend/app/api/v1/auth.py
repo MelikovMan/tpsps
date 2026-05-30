@@ -53,6 +53,7 @@ async def login(
 @router.post("/register", response_model=RegisterResponse)
 async def register(
     request: RegisterRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     # Check if user already exists
@@ -92,15 +93,25 @@ async def register(
     )
     db.add(new_profile)
     await db.commit()
+
     new_user_response = RegisterResponse(
         id=new_id, 
         username=request.username,
         email=request.email,
         access_token=access_token
     )
-    
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,  # для разработки по HTTP; в продакшене должно быть True (HTTPS)
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
+    )
     return new_user_response
 
 @router.post("/logout")
-async def logout():
+async def logout(response:Response):
+    response.delete_cookie("access_token")
     return {"message": "Successfully logged out"}
