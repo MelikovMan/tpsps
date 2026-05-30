@@ -30,6 +30,25 @@ services:
     networks:
       - wiki-network
 
+  typesense-indexer:
+    build: ./wiki-backend
+    command: python scripts/typesense_index_creation.py
+    environment:
+      DATABASE_URL: postgresql+asyncpg://wiki_user:wiki_password@postgres:5432/wiki_db
+      DATABASE_URL_SYNC: postgresql://wiki_user:wiki_password@postgres:5432/wiki_db
+      TYPESENSE_HOST: typesense
+      TYPESENSE_PORT: 8108
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-xyz123}
+      TYPESENSE_EMBEDDING_MODEL: ${TYPESENSE_EMBEDDING_MODEL:-default}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
+    networks:
+      - wiki-network
+    restart: "no"
+
   frontend:
     build: 
       context: ./frontend
@@ -42,6 +61,47 @@ services:
     networks:
       - wiki-network
 
+  worker:
+    build:
+      context: ./wiki-backend
+      dockerfile: Dockerfile.worker
+    command: streaq run app.tasks.worker:worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://wiki_user:wiki_password@postgres:5432/wiki_db
+      DATABASE_URL_SYNC: postgresql://wiki_user:wiki_password@postgres:5432/wiki_db
+      REDIS_URL: redis://redis:6379/0
+      TYPESENSE_HOST: typesense
+      TYPESENSE_PORT: 8108
+      TYPESENSE_API_KEY: xyz123
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      BACKUP_TEMP_DIR: /tmp/wiki_backups
+      VANDALISM_CHECK_URL: http://neunets:8010/models/vandalism/"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"] # заглушка, можно реализовать запрос к внутреннему HTTP-эндоинту воркера
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+    - backup_temp:/tmp/wiki_backups
+    networks:
+      - wiki-network
   backend:
     build: ./wiki-backend
     ports:
@@ -127,6 +187,7 @@ volumes:
   postgres_data:
   minio_data:
   typesense_data:
+  backup_temp:
 
 networks:
   wiki-network:
