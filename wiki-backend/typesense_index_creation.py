@@ -14,8 +14,7 @@ from langdetect import detect, LangDetectException
 
 # Импортируем модели и настройки проекта
 from app.core.config import settings
-from app.models.article import Article, Branch, ArticleFull, Commit
-from app.services.commit_service import CommitService
+from app.models.article import Article, Branch, ArticleFull
 
 # Конфигурация Typesense из настроек (можно задать в .env)
 TYPESENSE_HOST = getattr(settings, 'TYPESENSE_HOST', 'localhost')

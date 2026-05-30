@@ -1,5 +1,6 @@
 # requirements-worker.txt
 sqlalchemy==2.0.23
+SQLAlchemy-Utils==0.41.2
 asyncpg==0.29.0
 psycopg2-binary==2.9.10      # или psycopg2, но binary легче
 pydantic[email,timezone]==2.5.0

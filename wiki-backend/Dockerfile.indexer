@@ -1,0 +1,44 @@
+# ===== СТАДИЯ 1: СБОРКА ЗАВИСИМОСТЕЙ =====
+FROM python:3.12-alpine AS builder
+
+WORKDIR /install
+
+
+RUN apk add --no-cache --virtual .build-deps \
+    gcc \
+    musl-dev \
+    postgresql-dev
+
+
+COPY requirements-indexer.txt .
+
+
+RUN pip install --no-cache-dir --user -r requirements-indexer.txt
+
+# ===== СТАДИЯ 2: ФИНАЛЬНЫЙ ОБРАЗ =====
+FROM python:3.12-alpine
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    WORKDIR=/app
+
+WORKDIR $WORKDIR
+
+
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+
+RUN apk add --no-cache libpq
+
+
+COPY app/core/config.py ./app/core/
+COPY app/core/enums.py ./app/core/
+COPY app/core/database.py ./app/core/
+COPY app/models/ ./app/models/
+
+
+COPY typesense_index_creation.py .
+
+# Запуск индексатора
+CMD ["python", "typesense_index_creation.py"]

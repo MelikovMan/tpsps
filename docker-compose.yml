@@ -32,7 +32,9 @@ services:
       - wiki-network
 
   typesense-indexer:
-    build: ./wiki-backend
+    build:
+      context: ./wiki-backend
+      dockerfile: Dockerfile.indexer
     command: python typesense_index_creation.py
     profiles: [indexer]
     environment:
@@ -42,6 +44,9 @@ services:
       TYPESENSE_PORT: 8108
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-xyz123}
       TYPESENSE_EMBEDDING_MODEL: ${TYPESENSE_EMBEDDING_MODEL:-ts/multilingual-e5-base}
+      SECRET_KEY: ${SECRET_KEY:-sluggy}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
     depends_on:
       postgres:
         condition: service_healthy
