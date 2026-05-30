@@ -9,7 +9,7 @@ import BranchesPanel from '../components/BranchesPanel';
 import ArticleNavigation from '../components/ArticleNavigation';
 import CommentsSection from '../components/CommentSection';
 
-import { MemoizedMarkdown } from '../components/MarkdownRenderer';
+//import { MemoizedMarkdown } from '../components/MarkdownRenderer';
 import DOMPurify from 'dompurify';
 
 export default function ArticlePage() {

@@ -53,8 +53,7 @@ class TypesenseSearchService(BaseSearchService):
         try:
             response = await self.client.collections['articles'].documents.search(search_params)
         except Exception as e:
-            # Логирование ошибки
-            return 0, []
+            raise ValueError(e)
 
         total = response.get('found', 0)
         hits = response.get('hits', [])

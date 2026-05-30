@@ -142,7 +142,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
 }
 
 const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProps>(
-  ({ content = '', onChange, placeholder = 'Введите текст...', minHeight = 200, error }, ref) => {
+  ({ content = '', onChange, minHeight = 200, error }, ref) => {
     const editor = useEditor({
       extensions: [
         StarterKit,

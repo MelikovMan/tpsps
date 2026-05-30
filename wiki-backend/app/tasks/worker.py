@@ -16,6 +16,7 @@ async def lifespan() -> AsyncIterator[TaskContext]:
     Выполняется при старте и завершении работы воркера.
     """
     # Здесь можно выполнить подготовительные операции (например, очистку очереди)
+    await typesense_client.initialize()
     async with AsyncSessionLocal() as db_session:
         async with httpx.AsyncClient() as http_client:
             ts_client = typesense_client.get_client()

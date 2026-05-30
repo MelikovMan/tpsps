@@ -4,11 +4,12 @@ asyncpg==0.29.0
 psycopg2-binary==2.9.10      # или psycopg2, но binary легче
 pydantic[email,timezone]==2.5.0
 pydantic-settings==2.1.0
-redis==5.0.1
+redis
 minio==7.2.15
-httpx==0.25.2
+httpx
 python-dotenv==1.0.0
 fastapi-cache2==0.2.2        # если используете FastAPICache для очистки
 langdetect
 streaq
-coredis                     # streaq рекомендует coredis (но можно и aioredis)
+coredis
+typesense==2.0.0                # streaq рекомендует coredis (но можно и aioredis)

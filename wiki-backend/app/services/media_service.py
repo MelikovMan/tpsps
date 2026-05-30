@@ -74,7 +74,7 @@ class MediaService:
             raise HTTPException(status_code=500, detail=f"Failed to upload file to storage {e}")
 
         protocol = "https" if settings.MINIO_SECURE else "http"
-        public_url = f"{protocol}://{settings.MINIO_ENDPOINT}/{bucket_name}/{object_key}"
+        public_url = f"{protocol}://{settings.minio_public_url}/{bucket_name}/{object_key}"
 
         media = Media(
             original_filename=file.filename,

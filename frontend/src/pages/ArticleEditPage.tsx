@@ -31,7 +31,7 @@ import {
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
 import { useArticle, useEditArticle, useArticleBranches, useCreateBranchFromCommit } from '../api/articles';
 import TurndownService from 'turndown';
-import MarkdownRenderer, { MemoizedMarkdown } from '../components/MarkdownRenderer';
+//import MarkdownRenderer, { MemoizedMarkdown } from '../components/MarkdownRenderer';
 //import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
 import { marked } from 'marked';
 import { MultiSelect, Loader } from '@mantine/core';
@@ -39,7 +39,7 @@ import { useAllCategoriesFlat } from '../api/categories';   // we'll create this
 import { useArticleCategories, useAddArticleCategories, useRemoveArticleCategory } from '../api/articles';
 import apiClient from '../api/client';
 import type { BranchResponse } from '../api/article';
-import { preprocessTemplateSyntax } from '../utils/markdownPreprocessor';
+//import { preprocessTemplateSyntax } from '../utils/markdownPreprocessor';
 interface ArticleEditFormData {
   title: string;
   status: string;
@@ -63,8 +63,8 @@ const turndownService = new TurndownService();
 //turndownService.use(turndownGfm);
 turndownService.addRule('template', {
   filter: (node) => node.getAttribute('data-template') !== null,
-  replacement: (content, node, options) => {
-    const el = node as HTMLElement;
+  replacement: (node) => {
+    const el = node as unknown as HTMLElement;
     const name = el.getAttribute('data-name') || '';
     const paramsJson = el.getAttribute('data-params') || '{}';
     const params = JSON.parse(paramsJson);

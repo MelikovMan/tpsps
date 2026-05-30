@@ -19,8 +19,8 @@ import { IconCheck, IconX, IconDeviceFloppy, IconEye } from '@tabler/icons-react
 import RichTextEditor, { type RichTextEditorRef } from '../components/RichTextEditor';
 import { useCreateArticle } from '../api/articles';
 import TurndownService from 'turndown';
+// @ts-ignore
 import { gfm as turndownGfm } from '@joplin/turndown-plugin-gfm';
-import { marked } from 'marked';
 interface ArticleFormData {
   title: string;
   status: string;
@@ -44,8 +44,8 @@ const turndownService = new TurndownService();
 turndownService.use(turndownGfm);
 turndownService.addRule('template', {
   filter: (node) => node.getAttribute('data-template') !== null,
-  replacement: (content, node, options) => {
-    const el = node as HTMLElement;
+  replacement: ( node) => {
+    const el = node as unknown as HTMLElement;
     const name = el.getAttribute('data-name') || '';
     const paramsJson = el.getAttribute('data-params') || '{}';
     const params = JSON.parse(paramsJson);

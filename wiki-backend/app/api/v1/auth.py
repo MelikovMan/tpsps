@@ -17,7 +17,9 @@ router = APIRouter()
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
-    db: AsyncSession = Depends(get_db)
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    
 ):
     result = await db.execute(select(User).where(User.username == request.username))
     user = result.scalar_one_or_none()
@@ -34,11 +36,11 @@ async def login(
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    Response.set_cookie(
+    response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,      # только HTTPS в продакшене
+        secure=False,  # для разработки по HTTP; в продакшене должно быть True (HTTPS)
         samesite="lax",
         max_age=settings.access_token_expire_minutes * 60,
         path="/",

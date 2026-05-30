@@ -176,7 +176,7 @@ def main():
 
             batch.append(document)
             indexed += 1
-            if len(batch) >= BATCH_SIZE:
+            if len(batch) >= BATCH_SIZE or indexed == total:
                 send_batch(batch)
                 batch = []  # очищаем batch
                 print(f"Проиндексировано {indexed}/{total}")

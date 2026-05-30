@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.services.backup.backup_manager import get_worker
+from app.services.backup.backup_manager import BackupManager, get_worker
 from app.core.security import require_permission
 from app.tasks.backup_tasks import create_backup_task, restore_backup_task, get_backup_status_task
 from streaq import Worker

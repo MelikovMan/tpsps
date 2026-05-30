@@ -192,3 +192,5 @@ class TypesenseSyncWorker:
             'created_at': int(article.created_at.timestamp()) if article.created_at else 0,
             'updated_at': int(article.updated_at.timestamp()) if article.updated_at else 0,
         }
+    
+worker_instance = TypesenseSyncWorker()

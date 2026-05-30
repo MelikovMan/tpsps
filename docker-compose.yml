@@ -25,25 +25,25 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 20s
       retries: 5
+      start_period: 15s
     networks:
       - wiki-network
 
   typesense-indexer:
     build: ./wiki-backend
-    command: python scripts/typesense_index_creation.py
+    command: python typesense_index_creation.py
+    profiles: [indexer]
     environment:
       DATABASE_URL: postgresql+asyncpg://wiki_user:wiki_password@postgres:5432/wiki_db
       DATABASE_URL_SYNC: postgresql://wiki_user:wiki_password@postgres:5432/wiki_db
       TYPESENSE_HOST: typesense
       TYPESENSE_PORT: 8108
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-xyz123}
-      TYPESENSE_EMBEDDING_MODEL: ${TYPESENSE_EMBEDDING_MODEL:-default}
+      TYPESENSE_EMBEDDING_MODEL: ${TYPESENSE_EMBEDDING_MODEL:-ts/multilingual-e5-base}
     depends_on:
       postgres:
-        condition: service_healthy
-      typesense:
         condition: service_healthy
     networks:
       - wiki-network
@@ -51,9 +51,7 @@ services:
 
   frontend:
     build: 
-      context: ./frontend
-      args:
-         NEXT_PUBLIC_API_URL: http://backend:8000/api/v1   
+      context: ./frontend  
     ports:
       - "80:3000"
     depends_on:
@@ -73,20 +71,22 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      typesense:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://wiki_user:wiki_password@postgres:5432/wiki_db
-      DATABASE_URL_SYNC: postgresql://wiki_user:wiki_password@postgres:5432/wiki_db
-      REDIS_URL: redis://redis:6379/0
-      TYPESENSE_HOST: typesense
-      TYPESENSE_PORT: 8108
-      TYPESENSE_API_KEY: xyz123
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      BACKUP_TEMP_DIR: /tmp/wiki_backups
-      VANDALISM_CHECK_URL: http://neunets:8010/models/vandalism/"
+      - DATABASE_URL=postgresql+asyncpg://wiki_user:wiki_password@postgres:5432/wiki_db
+      - DATABASE_URL_SYNC=postgresql://wiki_user:wiki_password@postgres:5432/wiki_db
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - CORS_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
+      - TYPESENSE_HOST=typesense
+      - TYPESENSE_PORT=8108
+      - TYPESENSE_API_KEY=xyz123
+      - SEARCH_ENGINE=typesense
+      - VANDALISM_CHECK_URL=http://neunets:8010/models/vandalism/"
+      - SECRET_KEY=${SECRET_KEY:-fg}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
     restart: unless-stopped
     deploy:
       resources:
@@ -113,7 +113,7 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
-      - CORS_ORIGINS='["http://localhost:3000", "http://127.0.0.1:3000"]'
+      - CORS_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
       - TYPESENSE_HOST=typesense
       - TYPESENSE_PORT=8108
       - TYPESENSE_API_KEY=xyz123
@@ -168,6 +168,8 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    networks:
+      - wiki-network
   minio-setup:
     image: minio/mc:latest
     depends_on:
