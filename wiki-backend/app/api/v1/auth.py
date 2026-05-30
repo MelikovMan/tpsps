@@ -104,7 +104,7 @@ async def register(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,  # для разработки по HTTP; в продакшене должно быть True (HTTPS)
+        secure=False,  
         samesite="lax",
         max_age=settings.access_token_expire_minutes * 60,
         path="/",
