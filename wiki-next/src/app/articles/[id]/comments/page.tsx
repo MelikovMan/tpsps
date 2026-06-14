@@ -8,16 +8,17 @@ export default async function CommentsPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { branch?: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ branch?: string }>;
 }) {
-  const branch = searchParams.branch || 'main';
+  const { id } = await params;
+  const { branch = 'main' } = await searchParams;
 
   try {
     const [article, branches, comments] = await Promise.all([
-      articlesApi.getById(params.id, branch, true),
-      branchesApi.getByArticle(params.id),
-      commentsApi.getByArticle(params.id),
+      articlesApi.getById(id, branch, true),
+      branchesApi.getByArticle(id),
+      commentsApi.getByArticle(id),
     ]);
     return (
       <CommentsClient

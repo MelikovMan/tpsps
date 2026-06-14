@@ -20,8 +20,8 @@ import Link from 'next/link';
 interface ArticleDetailProps {
   article: ArticleFullResponse;
   branches: BranchResponse[];
-  initialCommits: CommitResponse[];
-  initialComments: CommentResponse[];
+  initialCommits?: CommitResponse[];
+  initialComments?: CommentResponse[];
   currentBranch: string;
 }
 

@@ -7,10 +7,10 @@ import type { UserResponse, PermissionResponse } from '@/types';
 async function fetchUserFromBackend(token: string): Promise<{ user: UserResponse; permissions: PermissionResponse } | null> {
   try {
     const [userRes, permsRes] = await Promise.all([
-      fetch(`${process.env.API_URL}/users/me`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       }),
-      fetch(`${process.env.API_URL}/users/me/permissions`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/permissions`, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       }),
     ]);

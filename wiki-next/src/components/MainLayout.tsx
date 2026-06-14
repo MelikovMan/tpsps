@@ -41,7 +41,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const { isAuthenticated, user, permissions } = useAuth();
   const [opened, { toggle }] = useDisclosure();
-
   const navLinks: NavLinkItem[] = [
     { path: '/', label: 'Главная', icon: <IconHome size="1rem" /> },
     { path: '/articles', label: 'Статьи', icon: <IconArticle size="1rem" /> },
@@ -174,8 +173,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Main content with page transition */}
       <AppShell.Main>
         <Box p="md">
-          <AnimatePresence mode="wait">
-            <motion.div
+          <motion.div
               key={pathname}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -183,8 +181,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               transition={{ duration: 0.2 }}
             >
               {children}
-            </motion.div>
-          </AnimatePresence>
+          </motion.div>
         </Box>
       </AppShell.Main>
 

@@ -17,18 +17,25 @@ export const metadata = {
 
 import { Notifications } from '@mantine/notifications';
 import MainLayout from '@/components/MainLayout';
-export default function RootLayout({
+import { getServerSession } from '@/lib/session';
+import { AuthProvider } from '@/context/AuthContext';
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession();
   return (
     <html lang="en" {...mantineHtmlProps}>
 
       <body>
         <MantineProvider>
           <Notifications/>
-          <MainLayout>{children} </MainLayout>
+          <AuthProvider user={session?.user ?? null} permissions={session?.permissions ?? null}>
+            <MainLayout>
+              {children} 
+            </MainLayout>
+          </AuthProvider>
         </MantineProvider>
       </body>
     </html>
