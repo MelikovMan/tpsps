@@ -6,6 +6,7 @@ import type {
   MediaInfoResponse,
   MediaDownloadResponse,
   MediaListParams,
+  MediaUploadResponse,
 } from './types/media';
 
 export const mediaApi = {
