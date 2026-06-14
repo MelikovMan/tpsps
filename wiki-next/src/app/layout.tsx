@@ -16,6 +16,7 @@ export const metadata = {
 
 
 import { Notifications } from '@mantine/notifications';
+import MainLayout from '@/components/MainLayout';
 export default function RootLayout({
   children,
 }: {
@@ -23,13 +24,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" {...mantineHtmlProps}>
-      <head>
-        <ColorSchemeScript />
-      </head>
+
       <body>
         <MantineProvider>
           <Notifications/>
-          {children}
+          <MainLayout>{children} </MainLayout>
         </MantineProvider>
       </body>
     </html>

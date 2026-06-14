@@ -40,22 +40,18 @@ export default function ArticleDetail({
   const [selectedBranch, setSelectedBranch] = useState(currentBranch);
   const [activeTab, setActiveTab] = useState<string | null>('content');
 
-  // При изменении ветки обновляем URL
-  const handleBranchChange = (value: string | null) => {
-    const newBranch = value || 'main';
-    setSelectedBranch(newBranch);
-    const newSearchParams = new URLSearchParams(searchParams.toString());
-    if (newBranch !== 'main') {
-      newSearchParams.set('branch', newBranch);
-    } else {
-      newSearchParams.delete('branch');
-    }
-    const query = newSearchParams.toString();
-    router.replace(`/articles/${params.id}${query ? `?${query}` : ''}`);
-  };
+
+const handleBranchChange = (value: string | null) => {
+  const newBranch = value || 'main';
+  setSelectedBranch(newBranch);
+  const searchParams = new URLSearchParams();
+  if (newBranch !== 'main') searchParams.set('branch', newBranch);
+  const query = searchParams.toString();
+  router.replace(`/articles/${params.id}${query ? `?${query}` : ''}`);
+};
 
   const currentBranchObj = branches.find(b => b.name === selectedBranch) || null;
-  const commentsHref = `/articles/${params.id}${currentBranch !== 'main' ? `/${currentBranch}` : ''}/comments`
+  const commentsHref = `/articles/${params.id}/comments?branch=${currentBranch}`;
   return (
     <Box>
       {/* Header */}

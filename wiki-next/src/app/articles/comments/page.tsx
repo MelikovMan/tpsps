@@ -1,15 +1,17 @@
 import { notFound } from 'next/navigation';
 import { articlesApi } from '@/lib/api/articles';
-import { branchesApi } from '@/lib/api/branches';
 import { commentsApi } from '@/lib/api/comments';
+import { branchesApi } from '@/lib/api/branches';
 import CommentsClient from './CommentsClient';
 
-interface Props {
-  params: { id: string; branch?: string[] };
-}
-
-export default async function CommentsPage({ params }: Props) {
-  const branch = params.branch?.[0] || 'main';
+export default async function CommentsPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { branch?: string };
+}) {
+  const branch = searchParams.branch || 'main';
 
   try {
     const [article, branches, comments] = await Promise.all([
@@ -17,7 +19,6 @@ export default async function CommentsPage({ params }: Props) {
       branchesApi.getByArticle(params.id),
       commentsApi.getByArticle(params.id),
     ]);
-
     return (
       <CommentsClient
         article={article}
@@ -26,7 +27,7 @@ export default async function CommentsPage({ params }: Props) {
         currentBranch={branch}
       />
     );
-  } catch (error) {
+  } catch {
     notFound();
   }
 }

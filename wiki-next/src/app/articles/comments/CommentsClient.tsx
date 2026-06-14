@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   Container, Title, Text, Group, Badge, Select, Breadcrumbs, Anchor, Stack, Box,
 } from '@mantine/core';
@@ -28,15 +28,18 @@ export default function CommentsClient({
   const router = useRouter();
   const [selectedBranch, setSelectedBranch] = useState(currentBranch);
   const currentBranchObj = branches.find(b => b.name === selectedBranch);
+  const params = useParams();
 
-  const articleUrl = `/articles/${article.id}${selectedBranch !== 'main' ? `/${selectedBranch}` : ''}`;
+  const articleUrl = `/articles/${article.id}?branch=${selectedBranch !== 'main' ? `${selectedBranch}` : ''}`;
 
-  const handleBranchChange = (value: string | null) => {
-    const newBranch = value || 'main';
-    setSelectedBranch(newBranch);
-    const query = newBranch !== 'main' ? `?branch=${newBranch}` : '';
-    router.push(`/articles/${article.id}/comments${query}`);
-  };
+const handleBranchChange = (value: string | null) => {
+  const newBranch = value || 'main';
+  setSelectedBranch(newBranch);
+  const searchParams = new URLSearchParams();
+  if (newBranch !== 'main') searchParams.set('branch', newBranch);
+  const query = searchParams.toString();
+  router.replace(`/articles/${params.id}${query ? `?${query}` : ''}`);
+};
 
   return (
     <Container size="lg" py="xl">

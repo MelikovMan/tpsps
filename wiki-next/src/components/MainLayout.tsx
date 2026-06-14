@@ -2,9 +2,16 @@
 'use client';
 
 import { useState } from 'react';
-import { AppShell, Group, NavLink as MantineNavLink, Text, Anchor, Box, Burger } from '@mantine/core';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+import {
+  AppShell,
+  Group,
+  NavLink as MantineNavLink,
+  Text,
+  Anchor,
+  Box,
+  Burger,
+} from '@mantine/core';
 import {
   IconHome,
   IconArticle,
@@ -20,6 +27,7 @@ import UserMenu from '@/components/UserMenu';
 import { useDisclosure } from '@mantine/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { PermissionKey } from '@/lib/api/types/types';
+import Link from 'next/link';
 
 interface NavLinkItem {
   path: string;
@@ -29,6 +37,7 @@ interface NavLinkItem {
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user, permissions } = useAuth();
   const [opened, { toggle }] = useDisclosure();
@@ -37,16 +46,49 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     { path: '/', label: 'Главная', icon: <IconHome size="1rem" /> },
     { path: '/articles', label: 'Статьи', icon: <IconArticle size="1rem" /> },
     { path: '/categories', label: 'Категории', icon: <IconCategory size="1rem" /> },
-    { path: '/users', label: 'Пользователи', icon: <IconUser size="1rem" />, required: ['can_moderate'] },
-    { path: '/moderation', label: 'Модерация', icon: <IconShield size="1rem" />, required: ['can_moderate'] },
-    { path: '/admin', label: 'Администрирование', icon: <IconSettings size="1rem" />, required: ['can_delete'] },
-    { path: '/media/upload', label: 'Загрузка медиа', icon: <IconPhoto size="1rem" />, required: ['can_edit'] },
-    { path: '/media', label: 'Медиа', icon: <IconPhoto size="1rem" />, required: ['can_edit'] },
+    {
+      path: '/users',
+      label: 'Пользователи',
+      icon: <IconUser size="1rem" />,
+      required: ['can_moderate'],
+    },
+    {
+      path: '/moderation',
+      label: 'Модерация',
+      icon: <IconShield size="1rem" />,
+      required: ['can_moderate'],
+    },
+    {
+      path: '/admin',
+      label: 'Администрирование',
+      icon: <IconSettings size="1rem" />,
+      required: ['can_delete'],
+    },
+    {
+      path: '/media/upload',
+      label: 'Загрузка медиа',
+      icon: <IconPhoto size="1rem" />,
+      required: ['can_edit'],
+    },
+    {
+      path: '/media',
+      label: 'Медиа',
+      icon: <IconPhoto size="1rem" />,
+      required: ['can_edit'],
+    },
   ];
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/';
     return pathname.startsWith(path);
+  };
+
+  // Функция для навигации без передачи компонента
+  const navigate = (path: string) => (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    router.push(path);
+    // Закрываем бургер-меню на мобильных устройствах после клика
+    if (opened) toggle();
   };
 
   return (
@@ -58,7 +100,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Header */}
       <AppShell.Header p="sm">
         <Group justify="space-between">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Toggle navigation" />
+          <Burger
+            opened={opened}
+            onClick={toggle}
+            hiddenFrom="sm"
+            size="sm"
+            aria-label="Toggle navigation"
+          />
           <Group>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Logo size={40} />
@@ -72,12 +120,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <UserMenu user={user!} />
             ) : (
               <Group>
-                <Anchor component={Link} href="/login">
-                  Войти
-                </Anchor>
-                <Anchor component={Link} href="/register">
-                  Регистрация
-                </Anchor>
+                <Anchor onClick={navigate('/login')}>Войти</Anchor>
+                <Anchor onClick={navigate('/register')}>Регистрация</Anchor>
               </Group>
             )}
           </Group>
@@ -89,20 +133,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <AppShell.Section grow mt="md">
           {navLinks.map((link) => {
             if (link.required) {
-              if (!permissions || !link.required.every(perm => permissions[perm])) {
+              if (!permissions || !link.required.every((perm) => permissions[perm])) {
                 return null;
               }
             }
             return (
               <MantineNavLink
                 key={link.path}
-                component={Link}
-                href={link.path}
                 label={link.label}
                 leftSection={link.icon}
                 active={isActive(link.path)}
                 variant="filled"
                 mb={5}
+                component={Link}
+                href={link.path}
               />
             );
           })}
@@ -110,20 +154,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <AppShell.Section>
           {isAuthenticated && (
             <MantineNavLink
-              component={Link}
-              href="/profile"
               label="Мой профиль"
               active={isActive('/profile')}
               variant="filled"
+              onClick={navigate('/profile')}
             />
           )}
           {isAuthenticated && (
             <MantineNavLink
-              component={Link}
-              href="/articles/create"
               label="Создать страницу!"
               active={isActive('/articles/create')}
               variant="filled"
+              onClick={navigate('/articles/create')}
             />
           )}
         </AppShell.Section>
@@ -152,17 +194,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <Text size="sm" c="dimmed">
             © {new Date().getFullYear()} Вики-Система
           </Text>
-          <Anchor component={Link} href="/about" size="sm">
+          <Anchor onClick={navigate('/about')} size="sm">
             О проекте
           </Anchor>
-          <Anchor component={Link} href="/help" size="sm">
+          <Anchor onClick={navigate('/help')} size="sm">
             Помощь
           </Anchor>
-          <Anchor component={Link} href="/contacts" size="sm">
+          <Anchor onClick={navigate('/contacts')} size="sm">
             Контакты
           </Anchor>
           {isAuthenticated && user?.role === 'admin' && (
-            <Anchor component={Link} href="/admin" size="sm">
+            <Anchor onClick={navigate('/admin')} size="sm">
               Админ-панель
             </Anchor>
           )}
