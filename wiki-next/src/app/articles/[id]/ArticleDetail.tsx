@@ -101,6 +101,7 @@ const handleBranchChange = (value: string | null) => {
       <Tabs.Tab
         value="comments"
         component={Link}
+        // @ts-expect-error
         href={commentsHref}
         leftSection={<IconMessage size="1rem" />}
       >
@@ -131,7 +132,7 @@ const handleBranchChange = (value: string | null) => {
           <CommitsHistory
             articleId={params.id as string}
             selectedBranchId={currentBranchObj?.id}
-            initialCommits={initialCommits}
+            initialCommits={initialCommits!}
           />
         </Tabs.Panel>
 

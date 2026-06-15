@@ -8,8 +8,16 @@ import { TemplateResponse } from '@/lib/api/types/templates';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
+type FetchOptions = RequestInit & {
+  publicAccess?: boolean;
+  next?: {
+    tags?: string[];
+    revalidate?: number | false;
+  };
+};
+
 // Базовый fetch с авторизацией через cookies
-async function fetchAPI<T>(endpoint: string, options?: RequestInit & { publicAccess?: boolean }): Promise<T> {
+async function fetchAPI<T>(endpoint: string, options?: FetchOptions): Promise<T> {
 
   const { publicAccess = false, ...fetchOptions } = options || {};
 
@@ -148,18 +156,22 @@ export const getArticleCommits = cache(async (
   return { items: Array.isArray(data) ? data : [], total: Array.isArray(data) ? data.length : 0 };
 });
 export const getArticleComments = cache(async (articleId: string) => {
-  return fetchAPI<CommentResponse[]>(`/comments/article/${articleId}`, { tags: [`comments-${articleId}`] });
+  return fetchAPI<CommentResponse[]>(`/comments/article/${articleId}`, 
+    {
+    next: { tags: [`commits-${articleId}`] }
+  });
 });
 
 export const getAllCategoriesFlat = cache(async () => {
-  return fetchAPI<CategoryResponse[]>('/categories/flat', { tags: ['categories'] });
+  return fetchAPI<CategoryResponse[]>('/categories/flat', {next: { tags: ['categories'] }});
 });
 
 export const getTemplates = cache(async () => {
-  return fetchAPI<TemplateResponse[]>('/templates/', { tags: ['templates'] });
+  return fetchAPI<TemplateResponse[]>('/templates/', {next: { tags: ['templates'] }});
 });
 export const getArticleCategories = cache(async (articleId: string) => {
-  return fetchAPI<CategoryResponse[]>(`/articles/${articleId}/categories`, { 
+  return fetchAPI<CategoryResponse[]>(`/articles/${articleId}/categories`, 
+  {next: { 
     tags: [`categories-${articleId}`] 
-  });
+  }});
 });

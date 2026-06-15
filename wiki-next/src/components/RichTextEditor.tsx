@@ -10,7 +10,7 @@ import SubScript from '@tiptap/extension-subscript';
 import { Color } from '@tiptap/extension-color';
 import {TextStyle} from '@tiptap/extension-text-style';
 import { Box, Modal, Stack, Text, Group, Button, Image, Tooltip, ActionIcon, Loader } from '@mantine/core';
-import { forwardRef, useImperativeHandle, useEffect, useState } from 'react';
+import { forwardRef, useImperativeHandle, useEffect, useState, Key, JSXElementConstructor, ReactElement, ReactNode, ReactPortal } from 'react';
 
 import { TemplateNode } from './extensions/TemplateNode';
 import TemplateInsertModal from './extensions/TemplateInsertModal';
@@ -58,9 +58,9 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
 
     fetchMedia();
   }, [opened])
-  const images = mediaList?.data.filter(media => media.mime_type.startsWith('image/')) || [];
-  const videos = mediaList?.data.filter(media => media.mime_type.startsWith('video/')) || [];
-  const audio = mediaList?.data.filter(media => media.mime_type.startsWith('audio/')) || [];
+  const images = mediaList?.data.filter((media: { mime_type: string; }) => media.mime_type.startsWith('image/')) || [];
+  const videos = mediaList?.data.filter((media: { mime_type: string; }) => media.mime_type.startsWith('video/')) || [];
+  const audio = mediaList?.data.filter((media: { mime_type: string; }) => media.mime_type.startsWith('audio/')) || [];
   if (isLoading) return <Loader size="sm" /> 
   return (
     <Modal 
@@ -78,7 +78,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
               Изображения
             </Text>
             <Group gap="xs">
-              {images.slice(0, 12).map(media => (
+              {images.slice(0, 12).map((media: { id: Key | null | undefined; public_url: string; }) => (
                 <Button
                   key={media.id}
                   variant="outline"
@@ -111,7 +111,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
               Видео
             </Text>
             <Group gap="xs">
-              {videos.slice(0, 6).map(media => (
+              {videos.slice(0, 6).map((media: { id: Key | null | undefined; public_url: string; original_filename: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
                 <Button
                   key={media.id}
                   variant="outline"
@@ -134,7 +134,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
               Аудио
             </Text>
             <Group gap="xs">
-              {audio.slice(0, 6).map(media => (
+              {audio.slice(0, 6).map((media: { id: Key | null | undefined; public_url: string; original_filename: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
                 <Button
                   key={media.id}
                   variant="outline"
@@ -163,6 +163,7 @@ const RichTextEditorComponent = forwardRef<RichTextEditorRef, RichTextEditorProp
   ({ content = '', onChange, minHeight = 200, error }, ref) => {
     const editor = useEditor({
       extensions: [
+        // @ts-expect-error
         StarterKit,
         Underline,
         Link,

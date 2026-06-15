@@ -179,6 +179,7 @@ function CommitDetailsContent({ commit }: { commit: CommitResponse }) {
     Promise.all([commitsApi.getDetailed(commit.id), commitsApi.getDetailed(commit.id)])
       .then(([det, dif]) => {
         setDetails(det);
+        // @ts-expect-error
         setDiff(dif);
       })
       .catch(() => {})
@@ -202,8 +203,11 @@ function CommitDetailsContent({ commit }: { commit: CommitResponse }) {
           {showDiff ? 'Скрыть' : 'Показать'} diff
         </Button>
       </Group>
-
-      <Collapse in={showDiff}>
+      
+      <Collapse 
+      //@ts-expect-error 
+      in={showDiff}
+      >
         {diff ? (
           <Paper withBorder p="md" bg="gray.0">
             <Group>

@@ -30,7 +30,13 @@ export default async function MergeBranchPage({ params }: PageProps) {
     const targetBranchId = formData.get('targetBranchId') as string;
     const message = formData.get('message') as string;
     if (!targetBranchId) throw new Error('Выберите целевую ветку');
-    await mergeBranches(branchId, targetBranchId, message || undefined, id);
+    const params = {
+      sourceBranchId:branchId,
+      targetBranchId:targetBranchId,
+      message:message || undefined,
+      articleId:id,
+    }
+    await mergeBranches(params);
     redirect(`/articles/${id}/branches`);
   }
 

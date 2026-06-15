@@ -1,5 +1,6 @@
 import { api } from './client';
-import type { CategoryResponse, CategoryCreate, CategoryUpdate, ArticleResponse } from './types';
+import { ArticleResponse } from './types/article';
+import { CategoryCreate, CategoryResponse, CategoryUpdate } from './types/categories';
 
 export const categoriesApi = {
   // Получить корневые категории или дочерние для указанного parentId

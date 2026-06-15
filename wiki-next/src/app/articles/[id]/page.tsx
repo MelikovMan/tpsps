@@ -9,7 +9,7 @@ export const revalidate = 600; // ISR
 // Генерируем статические пути для популярных статей (опционально)
 export async function generateStaticParams() {
   const articles = await getArticles({ limit: 100, status: 'published' }, true); // publicAccess
-  return articles.items.map((article) => ({ id: article.id }));
+  return articles.items.map((article: { id: string; }) => ({ id: article.id }));
 }
 
 interface PageProps {

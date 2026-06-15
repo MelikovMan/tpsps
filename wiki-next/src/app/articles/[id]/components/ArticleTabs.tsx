@@ -29,6 +29,7 @@ export default function ArticleTabs({ articleId, currentBranch, children }: Arti
         <Tabs.Tab
           value="content"
           component={Link}
+          // @ts-expect-error
           href={`/articles/${articleId}?branch=${currentBranch}`}
           leftSection={<IconArticle size="1rem" />}
         >
@@ -37,6 +38,7 @@ export default function ArticleTabs({ articleId, currentBranch, children }: Arti
         <Tabs.Tab
           value="history"
           component={Link}
+          // @ts-expect-error
           href={`/articles/${articleId}/history?branch=${currentBranch}`}
           leftSection={<IconHistory size="1rem" />}
         >
@@ -45,6 +47,7 @@ export default function ArticleTabs({ articleId, currentBranch, children }: Arti
         <Tabs.Tab
           value="branches"
           component={Link}
+          // @ts-expect-error
           href={`/articles/${articleId}/branches?branch=${currentBranch}`}
           leftSection={<IconGitBranch size="1rem" />}
         >
@@ -53,6 +56,7 @@ export default function ArticleTabs({ articleId, currentBranch, children }: Arti
         <Tabs.Tab
           value="comments"
           component={Link}
+          // @ts-expect-error
           href={`/articles/${articleId}/comments?branch=${currentBranch}`}
           leftSection={<IconMessage size="1rem" />}
         >

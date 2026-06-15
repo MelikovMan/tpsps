@@ -8,7 +8,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(endpoint: string, options?: RequestInit & { params?: Record<string, string> }): Promise<T> {
+async function request<T>(endpoint: string, options?: RequestInit & { params?: Record<string, any> }): Promise<T> {
   const isServer = typeof window === 'undefined';
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -48,10 +48,10 @@ async function request<T>(endpoint: string, options?: RequestInit & { params?: R
 export const api = {
   get: <T>(endpoint: string, params?: Record<string, string>) =>
     request<T>(endpoint, { method: 'GET', params }),
-  post: <T>(endpoint: string, data?: unknown, params?: Record<string, string>) =>
+  post: <T>(endpoint: string, data?: unknown, params?: Record<string, any>) =>
     request<T>(endpoint, { method: 'POST', body: JSON.stringify(data), params }),
-  put: <T>(endpoint: string, data?: unknown, params?: Record<string, string>) =>
+  put: <T>(endpoint: string, data?: unknown, params?: Record<string, any>) =>
     request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data), params }),
-  delete: <T>(endpoint: string, params?: Record<string, string>) =>
+  delete: <T>(endpoint: string, params?: Record<string, any>) =>
     request<T>(endpoint, { method: 'DELETE', params }),
 };

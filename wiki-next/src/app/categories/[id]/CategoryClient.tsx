@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Title, Group, Checkbox, Loader, Alert, Card, Text, Stack, Badge, Pagination } from '@mantine/core';
 import Link from 'next/link';
 import { categoriesApi } from '@/lib/api/categories';
-import type { CategoryResponse, ArticleResponse } from '@/lib/api/types';
+import type { CategoryResponse } from '@/lib/api/types/categories'
+import { ArticleResponse } from '@/lib/api/types/article';
 
 const ARTICLES_PER_PAGE = 10;
 

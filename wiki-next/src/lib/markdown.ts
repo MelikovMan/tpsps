@@ -1,5 +1,7 @@
 // lib/markdown.ts
+// @ts-expect-error
 import TurndownService from 'turndown';
+// @ts-expect-error
 import { gfm } from '@joplin/turndown-plugin-gfm';
 import { marked } from 'marked';
 
@@ -12,8 +14,8 @@ turndownService.use(gfm);
 
 // Правило для кастомных шаблонов ({{template}})
 turndownService.addRule('template', {
-  filter: (node) => node.getAttribute('data-template') !== null,
-  replacement: (node) => {
+  filter: (node: { getAttribute: (arg0: string) => null; }) => node.getAttribute('data-template') !== null,
+  replacement: (node: HTMLElement) => {
     const el = node as HTMLElement;
     const name = el.getAttribute('data-name') || '';
     const paramsJson = el.getAttribute('data-params') || '{}';

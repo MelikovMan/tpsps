@@ -1,8 +1,9 @@
 // lib/session.ts
 import { cookies } from 'next/headers';
 import { cache } from 'react';
-import type { UserResponse, PermissionResponse } from '@/types';
 import { logout } from '@/app/actions/auth';
+import { UserResponse } from './api/types/types';
+import { PermissionResponse } from './api/types/types';
 
 // Функция для получения данных пользователя с бэкенда
 async function fetchUserFromBackend(token: string): Promise<{ user: UserResponse; permissions: PermissionResponse } | null> {

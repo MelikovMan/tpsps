@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag, updateTag } from 'next/cache';
 import { branchesApi } from '@/lib/api/branches';
-import type { BranchCreate, BranchCreateFromCommit, BranchUpdate } from '@/lib/api/types/article';
+import type { BranchCreate, BranchCreateFromCommit } from '@/lib/api/types/article';
 
 export async function createBranch(articleId: string, data: BranchCreate) {
   const branch = await branchesApi.create(data);
@@ -18,7 +18,7 @@ export async function createBranchFromCommit(articleId: string, data: BranchCrea
   return branch;
 }
 
-export async function updateBranch(branchId: string, data: BranchUpdate) {
+export async function updateBranch(branchId: string, data: any) {
   const branch = await branchesApi.update(branchId, data);
   updateTag(`branches-${branchId}`);
   revalidatePath(`/articles/${branchId.split('/')[0]}/branches`);

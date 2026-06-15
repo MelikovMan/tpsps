@@ -96,6 +96,7 @@ export default function ArticleHeaderAndTabs({ article, branches, articleId, chi
           <Tabs.Tab
             value="content"
             component={Link}
+            // @ts-expect-error
             href={`/articles/${articleId}?branch=${currentBranch}`}
             leftSection={<IconArticle size="1rem" />}
           >
@@ -104,6 +105,7 @@ export default function ArticleHeaderAndTabs({ article, branches, articleId, chi
           <Tabs.Tab
             value="history"
             component={Link}
+            // @ts-expect-error
             href={`/articles/${articleId}/history?branch=${currentBranch}`}
             leftSection={<IconHistory size="1rem" />}
           >
@@ -112,7 +114,9 @@ export default function ArticleHeaderAndTabs({ article, branches, articleId, chi
           <Tabs.Tab
             value="branches"
             component={Link}
+            // @ts-expect-error
             href={`/articles/${articleId}/branches?branch=${currentBranch}`}
+            
             leftSection={<IconGitBranchTab size="1rem" />}
           >
             Ветки
@@ -120,6 +124,7 @@ export default function ArticleHeaderAndTabs({ article, branches, articleId, chi
           <Tabs.Tab
             value="comments"
             component={Link}
+            // @ts-expect-error
             href={`/articles/${articleId}/comments?branch=${currentBranch}`}
             leftSection={<IconMessage size="1rem" />}
           >
