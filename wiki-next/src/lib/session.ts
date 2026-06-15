@@ -2,6 +2,7 @@
 import { cookies } from 'next/headers';
 import { cache } from 'react';
 import type { UserResponse, PermissionResponse } from '@/types';
+import { logout } from '@/app/actions/auth';
 
 // Функция для получения данных пользователя с бэкенда
 async function fetchUserFromBackend(token: string): Promise<{ user: UserResponse; permissions: PermissionResponse } | null> {
@@ -15,7 +16,15 @@ async function fetchUserFromBackend(token: string): Promise<{ user: UserResponse
       }),
     ]);
 
-    if (!userRes.ok || !permsRes.ok) return null;
+    if (!userRes.ok || !permsRes.ok) {
+      if (userRes.status === 401 || permsRes.status === 401) {
+
+
+      }
+      if (!userRes.ok) console.warn(await userRes.text())
+      if (!permsRes.ok) console.warn(await permsRes.text())
+      return null;
+    }
 
     const user = await userRes.json();
     const permissions = await permsRes.json();
@@ -28,11 +37,11 @@ async function fetchUserFromBackend(token: string): Promise<{ user: UserResponse
 }
 
 // `cache` гарантирует, что в рамках одного запроса эта функция выполнится только один раз.
-export const getServerSession = cache(async () => {
+export const getServerSession = async () => {
   const cookieStore = await cookies();
   const token = cookieStore.get('access_token')?.value;
   if (!token) return null;
 
   const userData = await fetchUserFromBackend(token);
   return userData;
-});
+};

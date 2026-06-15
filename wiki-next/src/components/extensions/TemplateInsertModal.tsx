@@ -1,3 +1,4 @@
+'use cient'
 import { useState, useEffect } from 'react';
 import {
   Modal,
@@ -68,6 +69,7 @@ export default function TemplateInsertModal({ opened, onClose, onInsert }: Templ
   };
 
   const templateOptions = templates?.map((t) => ({ value: t.name, label: t.name })) || [];
+  if (isLoading) return <Loader/>
 
   return (
     <Modal opened={opened} onClose={onClose} title="Вставить шаблон" size="md">

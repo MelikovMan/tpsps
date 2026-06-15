@@ -1,45 +1,33 @@
 // app/articles/[id]/page.tsx
-import { notFound } from 'next/navigation';
-import { articlesApi } from '@/lib/api/articles';
-import { branchesApi } from '@/lib/api/branches';
-import ArticleDetail from './ArticleDetail';
+import { Suspense } from 'react';
+import { getArticle, getArticles } from '../lib/data';
+import { Skeleton } from '@mantine/core';
+import BranchAwareArticleBody from './components/BranchAwareArticleBody';
 
-export default async function ArticlePage({
-  params,
-  searchParams,
-}: {
+export const revalidate = 600; // ISR
+
+// Генерируем статические пути для популярных статей (опционально)
+export async function generateStaticParams() {
+  const articles = await getArticles({ limit: 100, status: 'published' }, true); // publicAccess
+  return articles.items.map((article) => ({ id: article.id }));
+}
+
+interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ branch?: string }>;
-}) {
+}
+
+export default async function ArticlePage({ params }: PageProps) {
   const { id } = await params;
-  const { branch = 'main' } = await searchParams;
+  // Загружаем данные основной ветки (главное содержимое)
+  const article = await getArticle(id, 'main', true, true);
 
-  try {
-    // Основная статья – обязательна
-    const article = await articlesApi.getById(id, branch, true);
-
-    // Ветки – не критичны, при ошибке используем пустой массив
-    let branches: Awaited<ReturnType<typeof branchesApi.getByArticle>> = [];
-    try {
-      branches = await branchesApi.getByArticle(id);
-    } catch (error) {
-      console.error(`Failed to fetch branches for article ${id}:`, error);
-    }
-
-    // Коммиты и комментарии пока можно передать пустыми массивами,
-    // если внутри `ArticleDetail` они опциональны или подгружаются клиентом.
-    // Если нет – см. пункт 2.
-    return (
-      <ArticleDetail
-        article={article}
-        branches={branches}
-        currentBranch={branch}
-        initialCommits={[]}
-        initialComments={[]}
+  return (
+    <Suspense fallback={<Skeleton height={400} animate />}>
+      <BranchAwareArticleBody
+        articleId={id}
+        initialBranch="main"
+        initialContent={article.content}
       />
-    );
-  } catch (error) {
-    console.error(`Failed to fetch article ${id}:`, error);
-    notFound();
-  }
+    </Suspense>
+  );
 }

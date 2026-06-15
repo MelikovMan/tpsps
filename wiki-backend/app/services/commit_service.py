@@ -1,6 +1,6 @@
 # app/services/commit_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text, and_
+from sqlalchemy import select, text, and_, func
 from sqlalchemy.orm import selectinload
 from typing import List, Optional, Tuple
 from uuid import UUID
@@ -603,3 +603,34 @@ class CommitService:
         )
         
         return revert_commit
+    
+    async def get_article_commits_count(self, article_id: UUID) -> int:
+        """Return total number of commits for an article."""
+        result = await self.db.execute(
+            select(func.count()).select_from(Commit).where(Commit.article_id == article_id)
+        )
+        return result.scalar_one()
+
+    async def get_branch_commits_count(self, branch_id: UUID) -> int:
+        """Return total number of commits in a branch using recursive traversal."""
+        # Получаем ветку
+        branch_query = select(Branch).where(Branch.id == branch_id)
+        branch_result = await self.db.execute(branch_query)
+        branch = branch_result.scalar_one_or_none()
+        if not branch:
+            return 0
+
+        # Рекурсивный CTE для сбора всех коммитов, достижимых от головы ветки
+        cte_initial = select(Commit.id).where(Commit.id == branch.head_commit_id).cte(name="commit_hierarchy", recursive=True)
+
+        cte_recursive = cte_initial.union_all(
+            select(Commit.id)
+            .select_from(
+                cte_initial.join(CommitParent, cte_initial.c.id == CommitParent.commit_id)
+                .join(Commit, CommitParent.parent_id == Commit.id)
+        )   
+        )
+
+        count_query = select(func.count()).select_from(cte_recursive)
+        result = await self.db.execute(count_query)
+        return result.scalar_one()

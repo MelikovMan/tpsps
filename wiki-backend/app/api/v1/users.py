@@ -40,7 +40,7 @@ async def get_current_user_info(
 ):
     return UserResponse.model_validate(current_user)
 
-@router.get("/search", response_model=List[UserResponse])
+@router.get("/search")
 async def search_users(
     q: Optional[str] = None,
     role: Optional[str] = None,
@@ -50,31 +50,34 @@ async def search_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("moderate"))
 ):
-    """Поиск пользователей с фильтрами"""
+    # Базовый запрос для фильтрации
     query = select(User)
-    
     if q:
         query = query.where(
-            (User.username.ilike(f"%{q}%")) | 
-            (User.email.ilike(f"%{q}%"))
+            (User.username.ilike(f"%{q}%")) | (User.email.ilike(f"%{q}%"))
         )
-    
     if role:
         role_list = role.split(',')
         query = query.where(User.role.in_(role_list))
-    
     if status:
         if status == 'active':
             query = query.where(User.is_active == True)
         elif status == 'blocked':
             query = query.where(User.is_active == False)
 
+    # Подсчёт общего количества (без пагинации)
+    count_query = select(func.count()).select_from(query.subquery())
+    total = await db.scalar(count_query)
+
+    # Пагинация
     query = query.offset(skip).limit(limit).order_by(User.created_at.desc())
-    
     result = await db.execute(query)
     users = result.scalars().all()
-    
-    return [UserResponse.model_validate(user) for user in users]
+
+    return {
+        "data": [UserResponse.model_validate(u) for u in users],
+        "total": total
+    }
 
 @router.get("/me/profile", response_model=UserProfileResponse)
 async def get_my_profile(

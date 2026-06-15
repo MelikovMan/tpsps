@@ -28,6 +28,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { PermissionKey } from '@/lib/api/types/types';
 import Link from 'next/link';
+import getAnimationKey from './PathnameKeys';
 
 interface NavLinkItem {
   path: string;
@@ -174,7 +175,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <AppShell.Main>
         <Box p="md">
           <motion.div
-              key={pathname}
+              key={getAnimationKey(pathname)}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}

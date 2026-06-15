@@ -1,3 +1,4 @@
+'use cient'
 import { Node } from '@tiptap/core';
 
 export interface TemplateOptions {
