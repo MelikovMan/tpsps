@@ -11,6 +11,9 @@ import {
   Anchor,
   Box,
   Burger,
+  useMantineColorScheme,            // добавлен
+  useComputedColorScheme,
+  Switch,  
 } from '@mantine/core';
 import {
   IconHome,
@@ -20,6 +23,8 @@ import {
   IconShield,
   IconSettings,
   IconPhoto,
+  IconSun,                          // добавлен
+  IconMoon,
 } from '@tabler/icons-react';
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/Logo';
@@ -29,7 +34,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { PermissionKey } from '@/lib/api/types/types';
 import Link from 'next/link';
 import getAnimationKey from './PathnameKeys';
-
+import { ThemeSwitch } from './ThemeSwitcher';
 interface NavLinkItem {
   path: string;
   label: string;
@@ -42,6 +47,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const { isAuthenticated, user, permissions } = useAuth();
   const [opened, { toggle }] = useDisclosure();
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
+  const toggleColorScheme = () => {
+    setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light');
+  };
   const navLinks: NavLinkItem[] = [
     { path: '/', label: 'Главная', icon: <IconHome size="1rem" /> },
     { path: '/articles', label: 'Статьи', icon: <IconArticle size="1rem" /> },
@@ -116,6 +126,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </Text>
           </Group>
           <Group>
+          {/*<Switch
+              size="md"
+              color="dark.4"
+              onLabel={<IconSun size={16} stroke={2.5} color="yellow" />}
+              offLabel={<IconMoon size={16} stroke={2.5} color="cyan" />}
+              checked={computedColorScheme === 'dark'}
+              onChange={toggleColorScheme}
+            />
+          */}
+          {<ThemeSwitch/>
+          }
             {isAuthenticated ? (
               <UserMenu user={user!} />
             ) : (

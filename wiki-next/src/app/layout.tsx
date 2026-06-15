@@ -6,6 +6,8 @@ import '@mantine/tiptap/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/dropzone/styles.css';
 import '@mantine/notifications/styles.css';
+import '@mantine/core/styles.css'; // 👈 обязательный импорт стилей Mantine
+import './globals-anim.css';
 
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
 
