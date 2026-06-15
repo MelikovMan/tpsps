@@ -215,9 +215,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Footer */}
       <AppShell.Footer p="md" withBorder>
         <Group justify="center">
-          <Text size="sm" c="dimmed">
-            © {new Date().getFullYear()} Вики-Система
-          </Text>
           <Anchor onClick={navigate('/about')} size="sm">
             О проекте
           </Anchor>
@@ -232,6 +229,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               Админ-панель
             </Anchor>
           )}
+        </Group>
+        <Group justify="center" mt={5}>
+          <Text size="sm" c="dimmed" >
+            © {new Date().getFullYear()} Вики-Система
+          </Text>
         </Group>
       </AppShell.Footer>
     </AppShell>
