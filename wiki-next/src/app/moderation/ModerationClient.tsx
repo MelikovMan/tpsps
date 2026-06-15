@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import {
   Table, Title, Badge, Group, Button, Modal, Stack, Text, Textarea,
-  Select, Loader, Alert, ActionIcon, Tooltip
+  Select, Loader, Alert, ActionIcon, Tooltip,
+  ScrollArea
 } from '@mantine/core';
 import { IconCheck, IconRotateClockwise, IconX } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -104,6 +105,7 @@ export default function ModerationClient({ initialModerations }: { initialModera
       </Group>
 
       {moderations && moderations.length > 0 ? (
+        <ScrollArea type="auto" offsetScrollbars>
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
@@ -178,6 +180,7 @@ export default function ModerationClient({ initialModerations }: { initialModera
             ))}
           </Table.Tbody>
         </Table>
+        </ScrollArea>
       ) : (
         <Text c="dimmed">Нет заявок на модерацию</Text>
       )}

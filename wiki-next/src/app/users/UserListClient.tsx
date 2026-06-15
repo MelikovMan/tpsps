@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import {
   Box, Button, TextInput, Select, Table, Group, ActionIcon,
-  Modal, Text, Flex, Pagination, LoadingOverlay, Title, Badge, Stack
+  Modal, Text, Flex, Pagination, LoadingOverlay, Title, Badge, Stack,
+  ScrollArea
 } from '@mantine/core';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -138,8 +139,8 @@ export default function UserListClient({ initialData }: { initialData: { data: U
     <Box p="md">
       <Title order={1} mb="xl">Управление пользователями</Title>
 
-      <Flex justify="space-between" mb="md">
-        <Group>
+      <Flex justify="space-between" mb="md" direction={{ base: 'column', sm: 'row' }} gap="sm">
+        <Group wrap="wrap" gap="xs">
           <TextInput placeholder="Поиск пользователей..." value={searchTerm} onChange={(e) => setSearchTerm(e.currentTarget.value)} />
           <Select
             placeholder="Фильтр по роли"
@@ -158,6 +159,7 @@ export default function UserListClient({ initialData }: { initialData: { data: U
 
       <Box pos="relative">
         <LoadingOverlay visible={loading} overlayProps={{ radius: 'sm', blur: 2 }} />
+        <ScrollArea type="auto" offsetScrollbars>
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
@@ -189,6 +191,7 @@ export default function UserListClient({ initialData }: { initialData: { data: U
             ))}
           </Table.Tbody>
         </Table>
+        </ScrollArea>
         {!loading && usersData?.data.length === 0 && <Text ta="center" mt="md" c="dimmed">Не найдены</Text>}
         <Flex justify="flex-end" mt="md">
           <Pagination value={page} onChange={setPage} total={totalPages} disabled={loading} />

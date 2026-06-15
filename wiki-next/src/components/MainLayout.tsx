@@ -29,7 +29,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/Logo';
 import UserMenu from '@/components/UserMenu';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { PermissionKey } from '@/lib/api/types/types';
 import Link from 'next/link';
@@ -43,6 +43,7 @@ interface NavLinkItem {
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const isMobile = useMediaQuery('(max-width: 48em)');
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user, permissions } = useAuth();
@@ -117,11 +118,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             size="sm"
             aria-label="Toggle navigation"
           />
-          <Group>
+          <Group gap="xs" wrap="nowrap">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Logo size={40} />
+              <Logo size={isMobile ? 0 : 40} />
             </motion.div>
-            <Text size="xl" fw={700} ml="sm" ta="center">
+            <Text size={isMobile ? "md" : "xl"}
+            fw={700} 
+            ml="sm" 
+            ta="center"
+            >
               Вики-Система
             </Text>
           </Group>
