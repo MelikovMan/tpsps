@@ -3,13 +3,14 @@
 import { Group, Select, Checkbox, Tooltip } from '@mantine/core';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCallback } from 'react';
+import { useSearchTransition } from './SearchTransitionContext';
 
 interface FiltersProps {
   status?: string | null;
   language?: string | null;
   fields?: string | null;
   hybrid?: boolean;
-  isSearchMode: boolean; // если true – показываем расширенные фильтры поиска
+  isSearchMode: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -25,8 +26,8 @@ const LANGUAGE_OPTIONS = [
 
 const FIELDS_OPTIONS = [
   { value: 'both', label: 'Везде' },
-  { value: 'title', label: 'Заголовки' },
-  { value: 'content', label: 'Содержимое' },
+  { value: 'title', label: 'Только заголовки' },
+  { value: 'content', label: 'Только содержимое' },
 ];
 
 export default function Filters({
@@ -38,30 +39,32 @@ export default function Filters({
 }: FiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { startTransition } = useSearchTransition();
 
   const updateParams = useCallback(
     (updates: Record<string, string | null | boolean>) => {
       const params = new URLSearchParams(window.location.search);
-      
+
       Object.entries(updates).forEach(([key, value]) => {
         if (value === null || value === undefined || value === '') {
           params.delete(key);
         } else if (typeof value === 'boolean') {
-          params.set(key, value ? 'true' : 'false');
+          if (value === true) {
+            params.set(key, 'true');
+          } else {
+            params.delete(key); // false → удаляем параметр
+          }
         } else {
           params.set(key, String(value));
         }
       });
-      
-      // При смене фильтра сбрасываем страницу на первую
-      params.delete('page');
-      
-      router.push(`${pathname}?${params.toString()}`);
+
+      params.delete('page'); // сброс страницы при смене фильтра
+      startTransition(()=>router.push(`${pathname}?${params.toString()}`))
     },
     [router, pathname]
   );
 
-  // Если не в режиме поиска – показываем только фильтр по статусу
   if (!isSearchMode) {
     return (
       <Group mb="md">
@@ -77,21 +80,21 @@ export default function Filters({
     );
   }
 
-  // Режим поиска – расширенные фильтры
   return (
     <Group mb="md" grow>
       <Select
-        placeholder="Язык"
+        placeholder="Язык (любой)"
         data={LANGUAGE_OPTIONS}
-        value={language ?? "en"}
+        value={language || null}
         onChange={(val) => updateParams({ lang: val })}
         clearable
       />
       <Select
-        placeholder="Область поиска"
+        placeholder="Область поиска (везде)"
         data={FIELDS_OPTIONS}
-        value={fields || 'both'}
-        onChange={(val) => updateParams({ fields: val || 'both' })}
+        value={fields || null}
+        onChange={(val) => updateParams({ fields: val })}
+        clearable
       />
       <Tooltip label="Объединяет полнотекстовый и семантический поиск (требуется Typesense)">
         <Checkbox

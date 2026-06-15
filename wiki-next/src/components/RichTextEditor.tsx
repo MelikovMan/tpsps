@@ -18,6 +18,7 @@ import { IconMusic, IconPhoto, IconTemplate, IconVideo } from '@tabler/icons-rea
 import { mediaApi } from '@/lib/api/media';
 
 import ImageExtension from '@tiptap/extension-image';
+import { MediaFile } from '@/lib/api/types/media';
 
 interface RichTextEditorProps {
   content?: string;
@@ -39,7 +40,7 @@ interface MediaEmbedModalProps {
   onEmbed: (mediaId: string, mediaType: 'image' | 'video' | 'audio') => void;
 }
 function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
-  const [mediaList, setMediaList] = useState<any>(null);
+  const [mediaList, setMediaList] = useState<MediaFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
     if (!opened) return;
@@ -58,9 +59,9 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
 
     fetchMedia();
   }, [opened])
-  const images = mediaList?.data.filter((media: { mime_type: string; }) => media.mime_type.startsWith('image/')) || [];
-  const videos = mediaList?.data.filter((media: { mime_type: string; }) => media.mime_type.startsWith('video/')) || [];
-  const audio = mediaList?.data.filter((media: { mime_type: string; }) => media.mime_type.startsWith('audio/')) || [];
+  const images = mediaList?.filter((media: { mime_type: string; }) => media.mime_type.startsWith('image/')) || [];
+  const videos = mediaList?.filter((media: { mime_type: string; }) => media.mime_type.startsWith('video/')) || [];
+  const audio = mediaList?.filter((media: { mime_type: string; }) => media.mime_type.startsWith('audio/')) || [];
   if (isLoading) return <Loader size="sm" /> 
   return (
     <Modal 
@@ -68,7 +69,7 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
       onClose={onClose} 
       title="Вставить медиа" 
       size="xl"
-    >
+    >{isLoading ? <Loader size="sm" /> : 
       <Stack gap="md">
         {/* Images Section */}
         {images.length > 0 && (
@@ -149,12 +150,13 @@ function MediaEmbedModal({ opened, onClose, onEmbed }: MediaEmbedModalProps) {
           </div>
         )}
 
-        {mediaList?.data.length === 0 && (
+        {mediaList?.length === 0 && (
           <Text c="dimmed" ta="center">
             Медиафайлы не найдены. Загрузите файлы в медиатеку.
           </Text>
         )}
       </Stack>
+    }
     </Modal>
   );
 }

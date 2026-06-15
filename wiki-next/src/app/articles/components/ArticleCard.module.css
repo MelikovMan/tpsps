@@ -1,0 +1,21 @@
+.card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--mantine-shadow-md);
+  border-color: var(--mantine-color-blue-6);
+}
+
+/* Стили для сниппета с подсветкой mark */
+.snippet {
+  margin: 0;
+}
+
+.snippet mark {
+  background-color: var(--mantine-color-yellow-3);
+  padding: 0 2px;
+  border-radius: var(--mantine-radius-xs);
+}
