@@ -8,8 +8,25 @@ export const revalidate = 600; // ISR
 
 // Генерируем статические пути для популярных статей (опционально)
 export async function generateStaticParams() {
-  const articles = await getArticles({ limit: 100, status: 'published' }, true); // publicAccess
-  return articles.items.map((article: { id: string; }) => ({ id: article.id }));
+  // Если стратегия не SSG – ничего не генерируем заранее
+  if (process.env.BUILD_STRATEGY !== 'ssg') {
+    return [];
+  }
+
+  // Иначе – загружаем все опубликованные статьи и генерируем для них страницы
+  try {
+    const articles = await getArticles({ 
+      limit: 1000,              // можно увеличить, если статей много
+      status: 'published' 
+    }, true);                   // publicAccess = true (без cookies)
+
+    return articles.items.map((article: { id: string }) => ({
+      id: article.id,
+    }));
+  } catch (error) {
+    console.error('Failed to generate static paths for articles:', error);
+    return [];
+  }
 }
 
 interface PageProps {
