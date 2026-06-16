@@ -120,12 +120,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           />
           <Group gap="xs" wrap="nowrap">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Logo size={isMobile ? 0 : 40} />
+              <Logo size={isMobile ? 32 : 40} />
             </motion.div>
             <Text size={isMobile ? "md" : "xl"}
             fw={700} 
             ml="sm" 
             ta="center"
+            visibleFrom='sm'
             >
               Вики-Система
             </Text>
