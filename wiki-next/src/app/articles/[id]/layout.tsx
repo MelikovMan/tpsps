@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { getArticle, getArticleBranches } from '../lib/data';
 import ArticleHeaderAndTabs from './components/ArticleHeaderandTabs';
 import { BranchResponse } from '@/lib/api/types/article';
+import { Suspense } from 'react';
+import { Skeleton } from '@mantine/core';
 
 // ISR – перегенерация раз в час
 export const revalidate = 3600;
@@ -25,9 +27,11 @@ export default async function ArticleLayout({ children, params }: LayoutProps) {
       console.warn(`Failed to load branches for ${id}:`, error);
     }
     return (
-      <ArticleHeaderAndTabs article={article} branches={branches} articleId={id}>
-        {children}
-      </ArticleHeaderAndTabs>
+      <Suspense fallback={<Skeleton height={200} animate />}>
+        <ArticleHeaderAndTabs article={article} branches={branches} articleId={id}>
+          {children}
+        </ArticleHeaderAndTabs>
+      </Suspense>
     );
   } catch (error) {
     console.error(`Failed to load article ${id}:`, error);

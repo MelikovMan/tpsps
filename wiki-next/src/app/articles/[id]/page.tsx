@@ -7,10 +7,13 @@ import BranchAwareArticleBody from './components/BranchAwareArticleBody';
 export const revalidate = 600; // ISR
 
 // Генерируем статические пути для популярных статей (опционально)
+
 export async function generateStaticParams() {
   // Если стратегия не SSG – ничего не генерируем заранее
   if (process.env.BUILD_STRATEGY !== 'ssg') {
-    return [];
+    return [{
+      id: '550e8400-e29b-41d4-a716-446655440001',
+    }];
   }
 
   // Иначе – загружаем все опубликованные статьи и генерируем для них страницы
@@ -25,10 +28,10 @@ export async function generateStaticParams() {
     }));
   } catch (error) {
     console.error('Failed to generate static paths for articles:', error);
-    return [];
+    throw Error;
   }
 }
-
+export const dynamicParams = true;
 interface PageProps {
   params: Promise<{ id: string }>;
 }

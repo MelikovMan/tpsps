@@ -17,4 +17,6 @@ export default async function ProfilePage() {
     }
   }
   return <ProfileClient initialProfile={initialProfile} errorStatus={errorStatus} />;
+
 }
+export const dynamic = 'force-dynamic';

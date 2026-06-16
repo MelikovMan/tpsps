@@ -6,9 +6,12 @@ COPY yarn.lock package.json ./
 RUN yarn install
 
 FROM node:24-alpine AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY yarn.lock package.json ./
 COPY . .
+RUN yarn install
 ARG NEXT_PUBLIC_API_URL
 ARG BUILD_STRATEGY=isr
 ENV BUILD_STRATEGY=${BUILD_STRATEGY}

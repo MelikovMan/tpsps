@@ -1,7 +1,6 @@
 // lib/session.ts
 import { cookies } from 'next/headers';
 import { cache } from 'react';
-import { logout } from '@/app/actions/auth';
 import { UserResponse } from './api/types/types';
 import { PermissionResponse } from './api/types/types';
 
@@ -18,12 +17,6 @@ async function fetchUserFromBackend(token: string): Promise<{ user: UserResponse
     ]);
 
     if (!userRes.ok || !permsRes.ok) {
-      if (userRes.status === 401 || permsRes.status === 401) {
-
-
-      }
-      if (!userRes.ok) console.warn(await userRes.text())
-      if (!permsRes.ok) console.warn(await permsRes.text())
       return null;
     }
 

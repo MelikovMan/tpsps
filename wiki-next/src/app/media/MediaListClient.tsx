@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Container, Title, Grid, Card, Image, Text, Group, Badge, Stack,
+  Container, Title, Grid, Card,  Text, Group, Badge, Stack,
   Pagination, Select, TextInput, ActionIcon, Tooltip, Modal, Button,
   LoadingOverlay, Center
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconSearch, IconDownload, IconInfoCircle, IconTrash } from '@tabler/icons-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { notifications } from '@mantine/notifications';
 import { mediaApi } from '@/lib/api/media';
@@ -17,7 +18,7 @@ import { getFileIcon, getFileType, formatFileSize, formatDate } from '@/lib/medi
 import type { MediaFile, MediaListResponse } from '@/lib/api/types/media';
 
 const ITEMS_PER_PAGE = 12;
-
+const isDev = process.env.NODE_ENV === 'development';
 export default function MediaListClient({ initialData }: { initialData: MediaListResponse }) {
   const router = useRouter();
   const [mediaData, setMediaData] = useState<MediaListResponse>(initialData);
@@ -189,12 +190,20 @@ export default function MediaListClient({ initialData }: { initialData: MediaLis
                 >
                   <Card.Section>
                     {media.mime_type.startsWith('image/') ? (
+                    <div style={{ position: 'relative', height: 160, width: '100%' }}>
                       <Image
                         src={media.public_url}
-                        height={160}
                         alt={media.original_filename}
-                        fallbackSrc="https://placehold.co/400x300?text=Image+Not+Available"
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        unoptimized={isDev}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"   
+                        onError={(e) => {
+                          // fallback – можно заменить на иконку или плейсхолдер
+                          e.currentTarget.src = '/image-not-found-icon.svg';
+                        }}
                       />
+                    </div>
                     ) : (
                       <Center style={{ height: 160, backgroundColor: 'var(--mantine-color-gray-0)' }}>
                         <Text size="xl">{getFileIcon(media.mime_type)}</Text>
@@ -289,7 +298,19 @@ export default function MediaListClient({ initialData }: { initialData: MediaLis
         {selectedMedia && (
           <Stack>
             {selectedMedia.mime_type.startsWith('image/') ? (
-              <Image src={selectedMedia.public_url} alt={selectedMedia.original_filename} radius="md" />
+              <div style={{ position: 'relative', height: 300, width: '100%' }}>
+                <Image
+                  src={selectedMedia.public_url}
+                  alt={selectedMedia.original_filename}
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  sizes="100vw"
+                  unoptimized={isDev}
+                  onError={(e) => {
+                    e.currentTarget.src = '/image-not-found-icon.svg';
+                  }}
+                />
+              </div>
             ) : (
               <Center style={{ height: 200, backgroundColor: 'var(--mantine-color-gray-0)' }}>
                 <Group>

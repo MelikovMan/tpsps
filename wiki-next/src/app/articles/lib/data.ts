@@ -1,6 +1,5 @@
 import 'server-only';
 import { cache } from 'react';
-import { cookies } from 'next/headers';
 import { ArticleFullResponse, BranchResponse, CommitResponse } from '@/lib/api/types/article';
 import { CommentResponse } from '@/lib/api/types/comment';
 import { CategoryResponse } from '@/lib/api/types/categories';
@@ -25,6 +24,7 @@ async function fetchAPI<T>(endpoint: string, options?: FetchOptions): Promise<T>
 
    if (!publicAccess) {
     try {
+      const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
       token = cookieStore.get('access_token')?.value;
     } catch (error) {
