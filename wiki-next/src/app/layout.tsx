@@ -6,8 +6,10 @@ import '@mantine/tiptap/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/dropzone/styles.css';
 import '@mantine/notifications/styles.css';
+import '@mantine/core/styles.css'; // 👈 обязательный импорт стилей Mantine
+import './globals-anim.css';
 
-import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import { ColorSchemeScript, MantineProvider, Skeleton, mantineHtmlProps } from '@mantine/core';
 
 export const metadata = {
   title: 'Вики система',
@@ -16,20 +18,29 @@ export const metadata = {
 
 
 import { Notifications } from '@mantine/notifications';
-export default function RootLayout({
+import MainLayout from '@/components/MainLayout';
+import { getServerSession } from '@/lib/session';
+import { AuthProvider } from '@/context/AuthContext';
+import { Suspense } from 'react';
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession();
   return (
     <html lang="en" {...mantineHtmlProps}>
-      <head>
-        <ColorSchemeScript />
-      </head>
+
       <body>
         <MantineProvider>
           <Notifications/>
-          {children}
+          <AuthProvider user={session?.user ?? null} permissions={session?.permissions ?? null}>
+           <Suspense fallback={<Skeleton height="100vh" animate />}>
+            <MainLayout>
+              {children} 
+            </MainLayout>
+            </Suspense>
+          </AuthProvider>
         </MantineProvider>
       </body>
     </html>

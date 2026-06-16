@@ -59,6 +59,10 @@ services:
       context: ./frontend  
     ports:
       - "80:3000"
+    environment:
+    - NEXT_PUBLIC_API_URL=http://backend:8000
+    - BUILD_STRATEGY=isr
+    - NEXT_PUBLIC_MINIO_PUBLIC_URL=http://minio:9000
     depends_on:
       - backend
     networks:

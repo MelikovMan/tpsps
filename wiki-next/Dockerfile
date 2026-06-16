@@ -2,16 +2,21 @@
 FROM node:24-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY yarn.lock package.json ./
+RUN yarn install
 
 FROM node:24-alpine AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY yarn.lock package.json ./
 COPY . .
+RUN yarn install
 ARG NEXT_PUBLIC_API_URL
+ARG BUILD_STRATEGY=isr
+ENV BUILD_STRATEGY=${BUILD_STRATEGY}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-RUN npm run build
+RUN yarn run build
 
 FROM node:24-alpine AS runner
 WORKDIR /app

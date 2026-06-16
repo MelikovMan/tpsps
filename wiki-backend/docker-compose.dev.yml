@@ -60,10 +60,11 @@ services:
     volumes:
       - typesense_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
+      test: ["CMD-SHELL", "python -c \"import http.client; conn = http.client.HTTPConnection('localhost', 8108); conn.request('GET', '/health'); resp = conn.getresponse(); exit(0 if resp.status == 200 else 1)\""]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 5
+      start_period: 60s
   postgres:
     hostname: postgres
     image: postgres:15

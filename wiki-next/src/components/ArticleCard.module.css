@@ -1,0 +1,20 @@
+/* ArticleCard.module.css */
+.card {
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Определяем CSS-переменные для цветов при наведении */
+.card[data-color='blue']:hover {
+  background-color: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-5);
+}
+.card[data-color='grape']:hover {
+  background-color: var(--mantine-color-grape-0);
+  border-color: var(--mantine-color-grape-5);
+}
+.card[data-color='green']:hover {
+  background-color: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-5);
+}

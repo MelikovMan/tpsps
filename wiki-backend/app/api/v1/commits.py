@@ -1,7 +1,7 @@
 # app/api/v1/commits.py
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from app.core.database import get_db
@@ -20,36 +20,58 @@ from app.core.config import settings
 router = APIRouter()
 
 
-@router.get("/article/{article_id}", response_model=List[CommitResponse])
+@router.get("/article/{article_id}", response_model=Union[List[CommitResponse], Dict[str, Any]])
 @cache(expire=settings.cache_expire)
 async def get_article_commits(
     article_id: UUID,
     skip: int = 0,
     limit: int = 50,
+    with_total: bool = False,
     db: AsyncSession = Depends(get_db)
 ):
-    """Get all commits for a specific article"""
+    """Get all commits for a specific article.
+    
+    If with_total=True, returns {"items": [...], "total": N}
+    Otherwise returns list of commits (backward compatible).
+    """
     commit_service = CommitService(db)
     try:
         commits = await commit_service.get_article_commits(article_id, skip=skip, limit=limit)
-        return [CommitResponse.model_validate(commit) for commit in commits]
+        if with_total:
+            # Нужно добавить метод подсчёта в CommitService
+            total = await commit_service.get_article_commits_count(article_id)
+            return {
+                "items": [CommitResponse.model_validate(c) for c in commits],
+                "total": total
+            }
+        return [CommitResponse.model_validate(c) for c in commits]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/branch/{branch_id}", response_model=List[CommitResponse])
+@router.get("/branch/{branch_id}", response_model=Union[List[CommitResponse], Dict[str, Any]])
 @cache(expire=settings.cache_expire)
 async def get_branch_commits(
     branch_id: UUID,
     skip: int = 0,
     limit: int = 50,
+    with_total: bool = False,
     db: AsyncSession = Depends(get_db)
 ):
-    """Get commits for a specific branch"""
+    """Get commits for a specific branch.
+    
+    If with_total=True, returns {"items": [...], "total": N}
+    """
     commit_service = CommitService(db)
     try:
         commits = await commit_service.get_branch_commits(branch_id, skip=skip, limit=limit)
-        return [CommitResponse.model_validate(commit) for commit in commits]
+        if with_total:
+            total = await commit_service.get_branch_commits_count(branch_id)
+            return {
+                "items": [CommitResponse.model_validate(c) for c in commits],
+                "total": total
+            }
+        return [CommitResponse.model_validate(c) for c in commits]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

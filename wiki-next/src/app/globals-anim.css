@@ -1,0 +1,11 @@
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: 
+    background-color 0.5s ease-in-out,
+    border-color 0.5s ease-in-out,
+    color 0.5s ease-in-out,
+    fill 0.5s ease-in-out,
+    stroke 0.5s ease-in-out,
+    box-shadow 0.5s ease-in-out !important;
+}

@@ -98,3 +98,5 @@ export interface DownloadMediaParams {
   mediaId: string;
   expiresIn?: number;
 }
+
+export interface MediaUploadResponse extends MediaFile {}
