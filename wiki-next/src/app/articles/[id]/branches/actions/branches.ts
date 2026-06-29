@@ -6,35 +6,35 @@ import type { BranchCreate, BranchCreateFromCommit } from '@/lib/api/types/artic
 
 export async function createBranch(articleId: string, data: BranchCreate) {
   const branch = await branchesApi.create(data);
-  updateTag(`branches-${articleId}`);
+  revalidateTag(`branches-${articleId}`, 'max');
   revalidatePath(`/articles/${articleId}/branches`);
   return branch;
 }
 
 export async function createBranchFromCommit(articleId: string, data: BranchCreateFromCommit) {
   const branch = await branchesApi.createFromCommit(articleId, data);
-  updateTag(`branches-${articleId}`);
+  revalidateTag(`branches-${articleId}`, 'max');
   revalidatePath(`/articles/${articleId}/branches`);
   return branch;
 }
 
 export async function updateBranch(branchId: string, data: any) {
   const branch = await branchesApi.update(branchId, data);
-  updateTag(`branches-${branchId}`);
+  revalidateTag(`branches-${branchId}`, 'max');
   revalidatePath(`/articles/${branchId.split('/')[0]}/branches`);
   return branch;
 }
 
 export async function deleteBranch(branchId: string, articleId: string) {
   await branchesApi.delete(branchId);
-  updateTag(`branches-${articleId}`);
+  revalidateTag(`branches-${articleId}`, 'max');
   revalidatePath(`/articles/${articleId}/branches`);
 }
 
 export async function mergeBranches(sourceBranchId: string, targetBranchId: string, message?: string, articleId?: string) {
   await branchesApi.merge({ sourceBranchId, targetBranchId, message });
   if (articleId) {
-    updateTag(`branches-${articleId}`);
+    revalidateTag(`branches-${articleId}`, 'max');
     revalidatePath(`/articles/${articleId}/branches`);
   }
 }

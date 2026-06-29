@@ -52,12 +52,6 @@ export default function CommentsSection({ articleId, initialComments }: Comments
 
   return (
     <Stack gap="lg">
-      <Group>
-        <IconMessage size="1.2rem" />
-        <Text size="lg" fw={600}>
-          Комментарии ({comments.length + comments.reduce((acc, c) => acc + (c.replies?.length ?? 0), 0)})
-        </Text>
-      </Group>
 
       {user && <CommentForm onSubmit={content => handleCreate(content)} />}
       <Divider />

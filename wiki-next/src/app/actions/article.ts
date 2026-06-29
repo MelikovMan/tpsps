@@ -33,7 +33,7 @@ export async function createArticle(data: {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  updateTag('articles');
+  revalidateTag('articles','max');
   revalidatePath('/articles');
   redirect(`/articles/${article.id}`);
 }
@@ -48,8 +48,8 @@ export async function updateArticle(
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    updateTag(`article-${articleId}`);
-    updateTag(`branches-${articleId}`);
+    revalidateTag(`article-${articleId}`,'max');
+    revalidateTag(`branches-${articleId}`,'max');
     revalidatePath(`/articles/${articleId}`);
     redirect(`/articles/${articleId}?branch=${branch}`);
   } catch (error: any) {
@@ -75,7 +75,7 @@ export async function createBranchFromCommit(
       description,
     }),
   });
-  updateTag(`branches-${articleId}`);
+  revalidateTag(`branches-${articleId}`,'max');
   revalidatePath(`/articles/${articleId}/branches`);
   return branch;
 }
@@ -85,7 +85,7 @@ export async function addArticleCategory(articleId: string, categoryId: string) 
     method: 'POST',
     body: JSON.stringify([categoryId]),
   });
-  updateTag(`categories-${articleId}`);
+  revalidateTag(`categories-${articleId}`,'max');
   revalidatePath(`/articles/${articleId}/edit`);
 }
 
@@ -93,6 +93,6 @@ export async function removeArticleCategory(articleId: string, categoryId: strin
   await fetchAPI(`/articles/${articleId}/categories/${categoryId}`, {
     method: 'DELETE',
   });
-  updateTag(`categories-${articleId}`);
+  revalidateTag(`categories-${articleId}`,'max');
   revalidatePath(`/articles/${articleId}/edit`);
 }
